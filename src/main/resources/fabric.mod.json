@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "artifacts",
+	"version": "${version}",
+	"name": "Fourth Wall Artifacts",
+	"description": "Artifacts for the Fourth Wall SMP",
+	"authors": [
+		"daileta"
+	],
+	"contact": {
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/artifacts/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.fourthwall.artifacts.FourthWallArtifacts"
+		],
+		"fabric-datagen": [
+			"net.fourthwall.artifacts.FourthWallArtifactsDataGenerator"
+		],
+		"client": [
+			"net.fourthwall.artifacts.artifactsclient"
+		]
+	},
+	"mixins": [
+		"artifacts.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
