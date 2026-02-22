@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld_rod",
+  "textures": {
+    "layer0": "evanpack:item/smoldering_rod_cast"
+  }
+}

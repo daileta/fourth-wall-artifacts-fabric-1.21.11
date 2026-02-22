@@ -1,4 +1,4 @@
-package net.fourthwall.artifacts;
+package net.fourthwall.artifacts.smoldering;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,7 +16,6 @@ public final class SmolderingRodConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "evanpack_smoldering_rod.json";
 
-    public double primeRadius = 2.0D;
     public float detonationDamage = 30.0F;
     public int primeFireTicks = 40;
     public int maxPrimedTargetsPerPlayer = 16;
@@ -52,9 +51,6 @@ public final class SmolderingRodConfig {
     }
 
     private void sanitize() {
-        if (primeRadius < 0.5D) {
-            primeRadius = 0.5D;
-        }
         if (detonationDamage < 0.0F) {
             detonationDamage = 0.0F;
         }

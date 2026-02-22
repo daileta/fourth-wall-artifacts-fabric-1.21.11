@@ -1,3 +1,14 @@
 {
-  "parent": "minecraft:item/fishing_rod"
+  "parent": "minecraft:item/handheld_rod",
+  "textures": {
+    "layer0": "evanpack:item/smoldering_rod"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "cast": 1
+      },
+      "model": "evanpack:item/smoldering_rod_cast"
+    }
+  ]
 }

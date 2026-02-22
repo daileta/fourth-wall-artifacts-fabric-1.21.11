@@ -1,3 +1,12 @@
 {
-  "item.evanpack.smoldering_rod": "Smoldering Rod"
+  "item.evanpack.smoldering_rod": "\u00a7c\u00a7lSmoldering Rod",
+  "item.evanpack.smoldering_rod.desc.line1": "A magmastone-tempered rod that hums with intense heat",
+  "item.evanpack.smoldering_rod.desc.line2": "Only a deranged fool could have created this...",
+  "item.evanpack.void_reaver": "\u00a75Void Reaver",
+  "item.evanpack.void_reaver.desc.line1": "An axe corrupted by the very void itself",
+  "item.evanpack.void_reaver.desc.line2": "Its never ending hunger is displayed in its radius",
+  "item.evanpack.infested_sword": "\u00a77\u00a7lInfested Sword",
+  "item.evanpack.infested_pickaxe": "\u00a77\u00a7lInfested Pickaxe",
+  "effect.evanpack.guaranteed_infested": "Guaranteed Infestation",
+  "itemGroup.evanpack.artifacts": "Fourth Wall Artifacts"
 }

@@ -21,7 +21,7 @@
 			"net.fourthwall.artifacts.FourthWallArtifactsDataGenerator"
 		],
 		"client": [
-			"net.fourthwall.artifacts.artifactsclient"
+			"net.fourthwall.artifacts.client.FourthWallArtifactsClient"
 		]
 	},
 	"mixins": [
