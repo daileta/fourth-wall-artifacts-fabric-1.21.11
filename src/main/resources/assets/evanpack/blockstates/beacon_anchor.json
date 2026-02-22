@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "evanpack:block/beacon_anchor"
+    }
+  }
+}

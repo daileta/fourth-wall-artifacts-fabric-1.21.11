@@ -1,0 +1,4 @@
+{
+  "enabled": true,
+  "forced_address": "http://server.example.net:25565"
+}

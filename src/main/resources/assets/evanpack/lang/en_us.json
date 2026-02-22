@@ -7,6 +7,12 @@
   "item.evanpack.void_reaver.desc.line2": "Its never ending hunger is displayed in its radius",
   "item.evanpack.infested_sword": "\u00a77\u00a7lInfested Sword",
   "item.evanpack.infested_pickaxe": "\u00a77\u00a7lInfested Pickaxe",
+  "item.evanpack.trident_of_poseidon": "\u00a71Trident of Poseidon",
+  "item.evanpack.beacon_core": "\u00a7b\u00a7lThe Beacon Core",
+  "item.evanpack.beacon_anchor": "\u00a7b\u00a7lBeacon",
+  "item.evanpack.beacon_anchor.desc.line1": "Place this down where you would like your anchor to be.",
+  "item.evanpack.beacon_anchor.desc.line2": "It is invisible and invincible and you can walk through it.",
+  "item.evanpack.beacon_anchor.desc.line3": "Only when there is a new user of the core can a new one be placed.",
   "effect.evanpack.guaranteed_infested": "Guaranteed Infestation",
   "itemGroup.evanpack.artifacts": "Fourth Wall Artifacts"
 }

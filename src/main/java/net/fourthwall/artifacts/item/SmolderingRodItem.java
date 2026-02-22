@@ -5,6 +5,7 @@ import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.FishingRodItem;
+import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
@@ -14,9 +15,14 @@ import net.minecraft.world.World;
 
 import java.util.function.Consumer;
 
-public class SmolderingRodItem extends FishingRodItem {
+public class SmolderingRodItem extends FishingRodItem implements PolymerFallbackItem {
     public SmolderingRodItem(Settings settings) {
         super(settings);
+    }
+
+    @Override
+    public net.minecraft.item.Item getFallbackItem(ItemStack stack) {
+        return Items.FISHING_ROD;
     }
 
     @Override

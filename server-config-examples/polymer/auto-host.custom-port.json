@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "type": "polymer:http_server",
+  "settings": {
+    "port": 25567,
+    "external_address": "http://server.example.net:25567/"
+  }
+}

@@ -1,20 +1,28 @@
 package net.fourthwall.artifacts.infested;
 
+import eu.pb4.polymer.core.api.other.PolymerStatusEffect;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.SilverfishEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import xyz.nucleoid.packettweaker.PacketContext;
 
-public class GuaranteedInfestedStatusEffect extends StatusEffect {
+public class GuaranteedInfestedStatusEffect extends StatusEffect implements PolymerStatusEffect {
     private static final int COLOR = 0x8CA4CC;
 
     public GuaranteedInfestedStatusEffect() {
         super(StatusEffectCategory.HARMFUL, COLOR);
+    }
+
+    @Override
+    public StatusEffect getPolymerReplacement(StatusEffect potion, PacketContext context) {
+        return StatusEffects.INFESTED.value();
     }
 
     @Override

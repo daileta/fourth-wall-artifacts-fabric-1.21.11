@@ -2,6 +2,7 @@ package net.fourthwall.artifacts.item;
 
 import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.item.AxeItem;
+import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.item.tooltip.TooltipType;
@@ -9,9 +10,14 @@ import net.minecraft.text.Text;
 
 import java.util.function.Consumer;
 
-public class VoidReaverItem extends AxeItem {
+public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
     public VoidReaverItem(ToolMaterial material, float attackDamage, float attackSpeed, Settings settings) {
         super(material, attackDamage, attackSpeed, settings);
+    }
+
+    @Override
+    public net.minecraft.item.Item getFallbackItem(ItemStack stack) {
+        return Items.NETHERITE_AXE;
     }
 
     @Override

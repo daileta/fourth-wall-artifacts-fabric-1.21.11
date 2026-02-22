@@ -1,11 +1,16 @@
 package net.fourthwall.artifacts.registry;
 
 import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.item.BeaconAnchorItem;
+import net.fourthwall.artifacts.item.BeaconCoreItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
+import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
+import net.minecraft.item.TridentItem;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -34,6 +39,24 @@ public final class ModItems {
     public static final Item INFESTED_PICKAXE = register(
             "infested_pickaxe",
             new InfestedPickaxeItem(withItemSettings("infested_pickaxe").pickaxe(ToolMaterial.NETHERITE, 2.0F, -2.8F).fireproof())
+    );
+    public static final Item TRIDENT_OF_POSEIDON = register(
+            "trident_of_poseidon",
+            new TridentOfPoseidonItem(
+                    withItemSettings("trident_of_poseidon")
+                            .maxDamage(250)
+                            .attributeModifiers(TridentOfPoseidonItem.createPoseidonAttributeModifiers())
+                            .component(DataComponentTypes.TOOL, TridentItem.createToolComponent())
+                            .fireproof()
+            )
+    );
+    public static final Item BEACON_CORE = register(
+            "beacon_core",
+            new BeaconCoreItem(withItemSettings("beacon_core").maxCount(1))
+    );
+    public static final Item BEACON_ANCHOR = register(
+            "beacon_anchor",
+            new BeaconAnchorItem(ModBlocks.BEACON_ANCHOR, withItemSettings("beacon_anchor").maxCount(1))
     );
 
     private ModItems() {

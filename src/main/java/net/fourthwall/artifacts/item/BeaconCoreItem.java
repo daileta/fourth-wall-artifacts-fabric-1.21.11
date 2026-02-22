@@ -4,13 +4,13 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 
-public class InfestedSwordItem extends Item implements PolymerFallbackItem {
-    public InfestedSwordItem(Settings settings) {
+public class BeaconCoreItem extends Item implements PolymerFallbackItem {
+    public BeaconCoreItem(Settings settings) {
         super(settings);
     }
 
     @Override
     public Item getFallbackItem(ItemStack stack) {
-        return Items.NETHERITE_SWORD;
+        return Items.NETHER_STAR;
     }
 }
