@@ -31,6 +31,11 @@ public final class ModBlocks {
         // Triggers static registration.
     }
 
+    public static String describeRegistrations() {
+        Identifier id = Registries.BLOCK.getId(BEACON_ANCHOR);
+        return id + "(" + BEACON_ANCHOR.getClass().getSimpleName() + ")";
+    }
+
     private static AbstractBlock.Settings withBlockSettings(String path) {
         Identifier id = FourthWallArtifacts.id(path);
         return AbstractBlock.Settings.create().registryKey(RegistryKey.of(RegistryKeys.BLOCK, id));

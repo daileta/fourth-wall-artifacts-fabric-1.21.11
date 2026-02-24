@@ -1,6 +1,7 @@
 package net.fourthwall.artifacts.registry;
 
 import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.item.PolymerFallbackItem;
 import net.fourthwall.artifacts.item.BeaconAnchorItem;
 import net.fourthwall.artifacts.item.BeaconCoreItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
@@ -20,6 +21,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ModItems {
     private static final List<Item> ARTIFACT_ITEMS = new ArrayList<>();
@@ -70,10 +72,26 @@ public final class ModItems {
         return List.copyOf(ARTIFACT_ITEMS);
     }
 
+    public static String describeRegistrations() {
+        return ARTIFACT_ITEMS.stream()
+                .map(item -> {
+                    Identifier id = Registries.ITEM.getId(item);
+                    String polymerInfo = item instanceof PolymerFallbackItem polymerFallbackItem
+                            ? "polymerFallback=" + Registries.ITEM.getId(polymerFallbackItem.getFallbackItem(item.getDefaultStack()))
+                            : "polymerFallback=<none>";
+                    return id + "(" + item.getClass().getSimpleName() + "," + polymerInfo + ")";
+                })
+                .collect(Collectors.joining(", "));
+    }
+
     private static Item register(String path, Item item) {
         Identifier id = FourthWallArtifacts.id(path);
         Item registered = Registry.register(Registries.ITEM, id, item);
         ARTIFACT_ITEMS.add(registered);
+        FourthWallArtifacts.LOGGER.info("Registered item {} as {} (polymer={})",
+                id,
+                registered.getClass().getSimpleName(),
+                registered instanceof PolymerFallbackItem);
         return registered;
     }
 

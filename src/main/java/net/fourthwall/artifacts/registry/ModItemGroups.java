@@ -25,4 +25,8 @@ public final class ModItemGroups {
     public static void init() {
         // Triggers static registration.
     }
+
+    public static String describeRegistrations() {
+        return Registries.ITEM_GROUP.getId(ARTIFACTS) + "(entries=" + ModItems.getArtifactItems().size() + ")";
+    }
 }
