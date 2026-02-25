@@ -1,3 +1,8 @@
 {
-  "parent": "evanpack:item/demonlordsgreataxe"
+	"credit": "Created by Mickey Joe Alpha - http://YouTube.com/@MushirMickeyJoe",
+	"parent": "minecraft:item/handheld",
+	"textures": {
+		"layer0": "evanpack:item/void_reaver",
+		"layer1": "evanpack:item/void_reaver_emissive"
+	}
 }

@@ -1,6 +1,7 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "layer0": "minecraft:item/netherite_pickaxe"
-  }
+	"credit": "Created by Mickey Joe Alpha - http://YouTube.com/@MushirMickeyJoe",
+    "parent": "minecraft:item/handheld",
+    "textures": {
+        "layer0": "evanpack:item/infested_pickaxe"
+    }
 }

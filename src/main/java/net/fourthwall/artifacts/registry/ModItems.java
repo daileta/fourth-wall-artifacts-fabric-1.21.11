@@ -2,10 +2,12 @@ package net.fourthwall.artifacts.registry;
 
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.item.PolymerFallbackItem;
+import net.fourthwall.artifacts.item.BloodSacrificeItem;
 import net.fourthwall.artifacts.item.BeaconAnchorItem;
 import net.fourthwall.artifacts.item.BeaconCoreItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
+import net.fourthwall.artifacts.item.RepeaterCrossbowItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
@@ -30,6 +32,10 @@ public final class ModItems {
             "smoldering_rod",
             new SmolderingRodItem(withItemSettings("smoldering_rod").maxDamage(128))
     );
+    public static final Item BLOOD_SACRIFICE = register(
+            "blood_sacrifice",
+            new BloodSacrificeItem(withItemSettings("blood_sacrifice").maxCount(1))
+    );
     public static final Item VOID_REAVER = register(
             "void_reaver",
             new VoidReaverItem(ToolMaterial.NETHERITE, 8.0F, -3.0F, withItemSettings("void_reaver").fireproof())
@@ -41,6 +47,10 @@ public final class ModItems {
     public static final Item INFESTED_PICKAXE = register(
             "infested_pickaxe",
             new InfestedPickaxeItem(withItemSettings("infested_pickaxe").pickaxe(ToolMaterial.NETHERITE, 2.0F, -2.8F).fireproof())
+    );
+    public static final Item REPEATER = register(
+            "repeater",
+            new RepeaterCrossbowItem(withItemSettings("repeater").maxDamage(465))
     );
     public static final Item TRIDENT_OF_POSEIDON = register(
             "trident_of_poseidon",

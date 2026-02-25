@@ -17,6 +17,9 @@ import net.minecraft.component.type.AttributeModifierSlot;
 
 public class TridentOfPoseidonItem extends TridentItem implements PolymerFallbackItem {
     private static final int RiptideLevel = 3;
+    private static final int UNBREAKING_LEVEL = 3;
+    private static final int MENDING_LEVEL = 1;
+    private static final int IMPALING_LEVEL = 5;
 
     public TridentOfPoseidonItem(Item.Settings settings) {
         super(settings);
@@ -42,13 +45,26 @@ public class TridentOfPoseidonItem extends TridentItem implements PolymerFallbac
     @Override
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
-        ensureRiptide(stack, world);
+        ensureEnchantments(stack, world);
     }
 
-    private static void ensureRiptide(ItemStack stack, ServerWorld world) {
-        var riptide = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT).getOrThrow(Enchantments.RIPTIDE);
+    private static void ensureEnchantments(ItemStack stack, ServerWorld world) {
+        var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
+        var riptide = enchantments.getOrThrow(Enchantments.RIPTIDE);
+        var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
+        var mending = enchantments.getOrThrow(Enchantments.MENDING);
+        var impaling = enchantments.getOrThrow(Enchantments.IMPALING);
         if (EnchantmentHelper.getLevel(riptide, stack) < RiptideLevel) {
             stack.addEnchantment(riptide, RiptideLevel);
+        }
+        if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
+            stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
+        }
+        if (EnchantmentHelper.getLevel(mending, stack) < MENDING_LEVEL) {
+            stack.addEnchantment(mending, MENDING_LEVEL);
+        }
+        if (EnchantmentHelper.getLevel(impaling, stack) < IMPALING_LEVEL) {
+            stack.addEnchantment(impaling, IMPALING_LEVEL);
         }
     }
 }

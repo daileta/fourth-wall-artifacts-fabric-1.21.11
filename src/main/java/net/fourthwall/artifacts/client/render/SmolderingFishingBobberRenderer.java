@@ -27,7 +27,7 @@ import net.minecraft.util.math.Vec3d;
 @Environment(EnvType.CLIENT)
 public class SmolderingFishingBobberRenderer extends EntityRenderer<FishingBobberEntity, SmolderingFishingBobberRenderer.State> {
     private static final Identifier VANILLA_TEXTURE = Identifier.ofVanilla("textures/entity/fishing_hook.png");
-    private static final Identifier SMOLDERING_TEXTURE = Identifier.of("evanpack", "textures/entity/fishing_hook.png");
+    private static final Identifier SMOLDERING_TEXTURE = Identifier.of("evanpack", "textures/entity/smoldering_rod_hook.png");
     private static final RenderLayer VANILLA_LAYER = RenderLayers.entityCutout(VANILLA_TEXTURE);
     private static final RenderLayer SMOLDERING_LAYER = RenderLayers.entityCutout(SMOLDERING_TEXTURE);
 

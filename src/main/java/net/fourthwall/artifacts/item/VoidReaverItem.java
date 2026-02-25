@@ -1,16 +1,26 @@
 package net.fourthwall.artifacts.item;
 
 import net.minecraft.component.type.TooltipDisplayComponent;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.AxeItem;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.item.tooltip.TooltipType;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 
 import java.util.function.Consumer;
 
 public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
+    private static final int UNBREAKING_LEVEL = 3;
+    private static final int MENDING_LEVEL = 1;
+    private static final int SHARPNESS_LEVEL = 5;
+
     public VoidReaverItem(ToolMaterial material, float attackDamage, float attackSpeed, Settings settings) {
         super(material, attackDamage, attackSpeed, settings);
     }
@@ -25,5 +35,28 @@ public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
         super.appendTooltip(stack, context, displayComponent, textConsumer, type);
         textConsumer.accept(Text.translatable("item.evanpack.void_reaver.desc.line1"));
         textConsumer.accept(Text.translatable("item.evanpack.void_reaver.desc.line2"));
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
+        super.inventoryTick(stack, world, entity, slot);
+        ensureEnchantments(stack, world);
+    }
+
+    private static void ensureEnchantments(ItemStack stack, ServerWorld world) {
+        var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
+        var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
+        var mending = enchantments.getOrThrow(Enchantments.MENDING);
+        var sharpness = enchantments.getOrThrow(Enchantments.SHARPNESS);
+
+        if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
+            stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
+        }
+        if (EnchantmentHelper.getLevel(mending, stack) < MENDING_LEVEL) {
+            stack.addEnchantment(mending, MENDING_LEVEL);
+        }
+        if (EnchantmentHelper.getLevel(sharpness, stack) < SHARPNESS_LEVEL) {
+            stack.addEnchantment(sharpness, SHARPNESS_LEVEL);
+        }
     }
 }

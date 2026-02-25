@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "evanpack:grim_layer_1"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "evanpack:grim_layer_2"
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+	"credit": "Created by Mickey Joe Alpha - http://YouTube.com/@MushirMickeyJoe",
+	"parent": "evanpack:item/soul_scythe",
+	"textures": {
+		"layer0": "evanpack:item/soul_scythe_fire_aspect"
+	}
+}

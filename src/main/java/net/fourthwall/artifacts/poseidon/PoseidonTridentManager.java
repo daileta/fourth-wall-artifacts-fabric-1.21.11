@@ -16,7 +16,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +29,8 @@ import java.util.UUID;
 
 public final class PoseidonTridentManager {
     private static final int HOLDING_BUFF_DURATION_TICKS = 10;
-    private static final int SPECIAL_COOLDOWN_TICKS = 100;
+    private static final int SPECIAL_COOLDOWN_TICKS = 300;
+    private static final int MAX_CHANNELING_TICKS = 100;
     private static final int BEAM_RADIUS = 6;
     private static final int BEAM_VISUAL_INTERVAL = 2;
     private static final int BEAM_DAMAGE_INTERVAL = 10;
@@ -35,6 +38,8 @@ public final class PoseidonTridentManager {
     private static final float RETALIATION_DAMAGE = 8.0F;
     private static final Map<UUID, Integer> SPECIAL_COOLDOWNS = new HashMap<>();
     private static final Set<UUID> CHANNELING_PLAYERS = new HashSet<>();
+    private static final Map<UUID, Integer> CHANNELING_DURATIONS = new HashMap<>();
+    private static final Map<UUID, Vec3d> CHANNELING_LOCK_POSITIONS = new HashMap<>();
     private static int retaliationDepth = 0;
 
     private PoseidonTridentManager() {
@@ -61,7 +66,19 @@ public final class PoseidonTridentManager {
                 continue;
             }
 
-            channelingThisTick.add(player.getUuid());
+            UUID uuid = player.getUuid();
+            int nextChannelTicks = CHANNELING_DURATIONS.getOrDefault(uuid, 0) + 1;
+            if (nextChannelTicks > MAX_CHANNELING_TICKS) {
+                SPECIAL_COOLDOWNS.put(uuid, SPECIAL_COOLDOWN_TICKS);
+                CHANNELING_DURATIONS.remove(uuid);
+                CHANNELING_LOCK_POSITIONS.remove(uuid);
+                continue;
+            }
+
+            CHANNELING_DURATIONS.put(uuid, nextChannelTicks);
+            channelingThisTick.add(uuid);
+            CHANNELING_LOCK_POSITIONS.putIfAbsent(uuid, new Vec3d(player.getX(), player.getY(), player.getZ()));
+            lockPlayerMovement(player);
             spawnStanceParticles(player, tick);
 
             List<LivingEntity> targets = getBeamTargets(player);
@@ -81,6 +98,8 @@ public final class PoseidonTridentManager {
         for (UUID uuid : Set.copyOf(CHANNELING_PLAYERS)) {
             if (!channelingThisTick.contains(uuid)) {
                 SPECIAL_COOLDOWNS.put(uuid, SPECIAL_COOLDOWN_TICKS);
+                CHANNELING_DURATIONS.remove(uuid);
+                CHANNELING_LOCK_POSITIONS.remove(uuid);
             }
         }
 
@@ -137,7 +156,7 @@ public final class PoseidonTridentManager {
         if (target instanceof PlayerEntity otherPlayer && (otherPlayer.isSpectator() || otherPlayer.isCreative())) {
             return false;
         }
-        return true;
+        return hasLineOfSight(player, target);
     }
 
     private static void fireBeams(ServerPlayerEntity player, List<LivingEntity> targets) {
@@ -181,6 +200,34 @@ public final class PoseidonTridentManager {
         world.spawnParticles(ParticleTypes.BUBBLE, x, y, z, 10, 0.5, 0.6, 0.5, 0.02);
         if (tick % 4 == 0) {
             world.spawnParticles(ParticleTypes.SPLASH, x, player.getY() + 0.1, z, 8, 0.45, 0.1, 0.45, 0.03);
+        }
+    }
+
+    private static boolean hasLineOfSight(ServerPlayerEntity player, LivingEntity target) {
+        ServerWorld world = (ServerWorld) player.getEntityWorld();
+        Vec3d start = player.getEyePos();
+        Vec3d end = new Vec3d(target.getX(), target.getBodyY(0.55), target.getZ());
+
+        HitResult hitResult = world.raycast(new RaycastContext(
+                start,
+                end,
+                RaycastContext.ShapeType.COLLIDER,
+                RaycastContext.FluidHandling.NONE,
+                player
+        ));
+
+        return hitResult.getType() == HitResult.Type.MISS;
+    }
+
+    private static void lockPlayerMovement(ServerPlayerEntity player) {
+        Vec3d lockPos = CHANNELING_LOCK_POSITIONS.get(player.getUuid());
+        if (lockPos == null) {
+            return;
+        }
+
+        player.setVelocity(0.0, 0.0, 0.0);
+        if (player.squaredDistanceTo(lockPos.x, lockPos.y, lockPos.z) > 0.0001D) {
+            player.refreshPositionAfterTeleport(lockPos.x, lockPos.y, lockPos.z);
         }
     }
 
