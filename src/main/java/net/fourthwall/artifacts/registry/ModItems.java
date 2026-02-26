@@ -10,6 +10,7 @@ import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
 import net.fourthwall.artifacts.item.LionsHeartItem;
 import net.fourthwall.artifacts.item.RepeaterCrossbowItem;
+import net.fourthwall.artifacts.item.ExcaliburItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
@@ -61,22 +62,30 @@ public final class ModItems {
     public static final Item TRIDENT_OF_POSEIDON = register(
             "trident_of_poseidon",
             new TridentOfPoseidonItem(
-                    withItemSettings("trident_of_poseidon")
-                            .maxDamage(250)
-                            .attributeModifiers(TridentOfPoseidonItem.createPoseidonAttributeModifiers())
-                            .component(DataComponentTypes.TOOL, TridentItem.createToolComponent())
-                            .fireproof()
+                withItemSettings("trident_of_poseidon")
+                        .maxDamage(250)
+                        .attributeModifiers(TridentOfPoseidonItem.createPoseidonAttributeModifiers())
+                        .component(DataComponentTypes.TOOL, TridentItem.createToolComponent())
+                        .fireproof()
             )
     );
-    public static final Item EARTHSPLITTER = register(
-        "earthsplitter",
-        new EarthsplitterItem(
-                withItemSettings("earthsplitter")
-                        .maxDamage(500)
-                        .attributeModifiers(EarthsplitterItem.createEarthsplitterAttributeModifiers())
-                        .fireproof()
-        )
-);
+        public static final Item EARTHSPLITTER = register(
+                "earthsplitter",
+                new EarthsplitterItem(
+                        withItemSettings("earthsplitter")
+                                .maxDamage(500)
+                                .attributeModifiers(EarthsplitterItem.createEarthsplitterAttributeModifiers())
+                                .fireproof()
+                )
+        );
+        public static final Item EXCALIBUR = register(
+                "excalibur",
+                new ExcaliburItem(
+                        withItemSettings("excalibur")
+                                .sword(ToolMaterial.IRON, 3.0F, -2.4F)
+                                .attributeModifiers(ExcaliburItem.createExcaliburAttributeModifiers())
+                )
+        );
     public static final Item BEACON_CORE = register(
             "beacon_core",
             new BeaconCoreItem(withItemSettings("beacon_core").maxCount(1))
