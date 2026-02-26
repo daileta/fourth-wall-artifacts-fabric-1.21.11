@@ -415,7 +415,7 @@ public final class ArtifactsConfig {
         public int beamCooldownTicks = 300;
         public List<StatusEffectEntry> holdingEffects = new ArrayList<>(List.of(
                 new StatusEffectEntry("minecraft:dolphins_grace", 10, 0),
-                new StatusEffectEntry("minecraft:night_vision", 50, 0),
+                new StatusEffectEntry("minecraft:night_vision", 220, 0),
                 new StatusEffectEntry("minecraft:conduit_power", 10, 0),
                 new StatusEffectEntry("minecraft:water_breathing", 10, 0)
         ));
