@@ -19,6 +19,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.minecraft.text.Text;
 
 public class RepeaterCrossbowItem extends CrossbowItem implements PolymerFallbackItem {
     private static final int POWER_LEVEL = 3;
@@ -36,6 +37,22 @@ public class RepeaterCrossbowItem extends CrossbowItem implements PolymerFallbac
     @Override
     public Item getFallbackItem(ItemStack stack) {
         return Items.CROSSBOW;
+    }
+
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("T").styled(s -> s.withColor(0xFFE229).withBold(true)))
+            .append(Text.literal("h").styled(s -> s.withColor(0xFFDC29).withBold(true)))
+            .append(Text.literal("e ").styled(s -> s.withColor(0xFFD629).withBold(true)))
+            .append(Text.literal("R").styled(s -> s.withColor(0xFFD129).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xFFCB29).withBold(true)))
+            .append(Text.literal("p").styled(s -> s.withColor(0xFFC529).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xFFBF29).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0xFFB929).withBold(true)))
+            .append(Text.literal("t").styled(s -> s.withColor(0xFFB329).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xFFAE29).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFFA229).withBold(true)));
     }
 
     @Override
