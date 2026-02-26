@@ -322,7 +322,7 @@ public final class ArtifactsConfig {
         public float maxHealth = 50.0F;
         public double movementSpeed = 0.50D;
         public double baseAttackDamage = 12.0D;
-        public int lifespanTicks = 0;
+        public int lifespanTicks = 20 * 60 * 3;
         public boolean inflictsWither = false;
         public double tetherRadius = 15.0D;
         public boolean targetClosestPlayerOnly = true;
