@@ -24,6 +24,10 @@ public interface PolymerFallbackItem extends PolymerItem {
         if (!PolymerResourcePackUtils.hasMainPack(context)) {
             return null;
         }
-        return Registries.ITEM.getId(stack.getItem());
+        Identifier itemId = Registries.ITEM.getId(stack.getItem());
+        if (!PolymerPackAssetGuard.hasItemDefinition(itemId)) {
+            return null;
+        }
+        return itemId;
     }
 }
