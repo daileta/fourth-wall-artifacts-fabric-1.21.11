@@ -6,7 +6,7 @@
 		"1": "evanpack:item/earthsplitter_head_2",
 		"2": "evanpack:item/earthsplitter_hinge",
 		"3": "evanpack:item/earthsplitter_stick",
-		"particle": "evanpack:item/earthsplitter_head"
+		"particle": "evanpack:item/earthsplitter_head_1"
 	},
 	"elements": [
 		{
