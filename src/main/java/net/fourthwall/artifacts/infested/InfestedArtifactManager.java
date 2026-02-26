@@ -4,6 +4,9 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.config.ArtifactsConfig;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.fourthwall.artifacts.registry.ModStatusEffects;
 import net.minecraft.block.Block;
@@ -22,6 +25,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -36,8 +42,6 @@ import java.util.UUID;
 public final class InfestedArtifactManager {
     private static final int HIT_EFFECT_DURATION_TICKS = 100;
     private static final int SELF_EFFECT_DURATION_TICKS = 10;
-    private static final int SWORD_BUFF_DURATION_TICKS = 40;
-    private static final int SWORD_AURA_RADIUS = 6;
     private static final int COMMAND_RADIUS = 12;
     private static final int COMMAND_TIMEOUT_TICKS = 60;
     private static final int COMMAND_OUT_OF_AGGRO_RANGE = 24;
@@ -48,17 +52,23 @@ public final class InfestedArtifactManager {
 
     private static final Map<UUID, UUID> COMMAND_TARGETS = new HashMap<>();
     private static final Map<UUID, Integer> NOT_HOLDING_SWORD_TICKS = new HashMap<>();
+    private static List<ResolvedStatusEffect> swordAuraBuffs = List.of();
     private static long tickCounter = 0L;
 
     private InfestedArtifactManager() {
     }
 
     public static void init() {
+        reloadConfig();
         ServerLivingEntityEvents.AFTER_DAMAGE.register(InfestedArtifactManager::onAfterDamage);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(InfestedArtifactManager::onAllowDamage);
         PlayerBlockBreakEvents.AFTER.register(InfestedArtifactManager::onAfterBlockBreak);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> clearOwner(handler.player.getUuid()));
         ServerTickEvents.END_SERVER_TICK.register(InfestedArtifactManager::onEndServerTick);
+    }
+
+    public static void reloadConfig() {
+        swordAuraBuffs = resolveConfiguredEffects(ArtifactsConfigManager.get().infestedSword.silverfishAuraBuffs, "infested sword silverfishAuraBuffs");
     }
 
     private static void onAfterDamage(LivingEntity entity, net.minecraft.entity.damage.DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
@@ -75,7 +85,7 @@ public final class InfestedArtifactManager {
         applyRefreshedGuaranteedInfested(entity, HIT_EFFECT_DURATION_TICKS);
         attacker.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GUARANTEED_INFESTED, SELF_EFFECT_DURATION_TICKS, 0, true, false));
 
-        if (entity != attacker) {
+        if (entity != attacker && ArtifactsConfigManager.get().infestedSword.enableTargetingCommand) {
             UUID ownerId = attacker.getUuid();
             COMMAND_TARGETS.put(ownerId, entity.getUuid());
             NOT_HOLDING_SWORD_TICKS.put(ownerId, 0);
@@ -146,20 +156,20 @@ public final class InfestedArtifactManager {
             ServerWorld world = (ServerWorld) player.getEntityWorld();
             List<SilverfishEntity> silverfish = world.getEntitiesByClass(
                     SilverfishEntity.class,
-                    player.getBoundingBox().expand(SWORD_AURA_RADIUS),
+                    player.getBoundingBox().expand(ArtifactsConfigManager.get().infestedSword.silverfishAuraRadius),
                     Entity::isAlive
             );
 
             for (SilverfishEntity fish : silverfish) {
-                fish.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, SWORD_BUFF_DURATION_TICKS, 2, true, false));
-                fish.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, SWORD_BUFF_DURATION_TICKS, 2, true, false));
-                fish.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, SWORD_BUFF_DURATION_TICKS, 0, true, false));
-                fish.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, SWORD_BUFF_DURATION_TICKS, 0, true, false));
+                applyConfiguredEffects(fish, swordAuraBuffs);
             }
         }
     }
 
     private static void updatePickaxeInfestation(MinecraftServer server) {
+        if (!ArtifactsConfigManager.get().infestedPickaxe.enableAuraInfestation) {
+            return;
+        }
         if (tickCounter % PICKAXE_PULSE_INTERVAL != 0) {
             return;
         }
@@ -187,6 +197,12 @@ public final class InfestedArtifactManager {
     }
 
     private static void updateSilverfishCommands(MinecraftServer server, Set<UUID> protectedPlayers) {
+        if (!ArtifactsConfigManager.get().infestedSword.enableTargetingCommand) {
+            COMMAND_TARGETS.clear();
+            NOT_HOLDING_SWORD_TICKS.clear();
+            return;
+        }
+
         for (UUID ownerId : new ArrayList<>(COMMAND_TARGETS.keySet())) {
             ServerPlayerEntity owner = server.getPlayerManager().getPlayer(ownerId);
             if (owner == null || !owner.isAlive()) {
@@ -313,5 +329,46 @@ public final class InfestedArtifactManager {
     private static void clearOwner(UUID ownerId) {
         COMMAND_TARGETS.remove(ownerId);
         NOT_HOLDING_SWORD_TICKS.remove(ownerId);
+    }
+
+    private static void applyConfiguredEffects(LivingEntity entity, List<ResolvedStatusEffect> effects) {
+        for (ResolvedStatusEffect effect : effects) {
+            entity.addStatusEffect(new StatusEffectInstance(effect.effect(), effect.durationTicks(), effect.amplifier(), true, false));
+        }
+    }
+
+    private static List<ResolvedStatusEffect> resolveConfiguredEffects(List<ArtifactsConfig.StatusEffectEntry> entries, String settingName) {
+        if (entries == null || entries.isEmpty()) {
+            return List.of();
+        }
+
+        List<ResolvedStatusEffect> resolved = new ArrayList<>();
+        for (ArtifactsConfig.StatusEffectEntry entry : entries) {
+            if (entry == null || entry.effectId == null) {
+                continue;
+            }
+
+            Identifier id = Identifier.tryParse(entry.effectId);
+            if (id == null) {
+                FourthWallArtifacts.LOGGER.warn("Skipping invalid status effect id '{}' in {}", entry.effectId, settingName);
+                continue;
+            }
+
+            var effectEntry = Registries.STATUS_EFFECT.getEntry(id);
+            if (effectEntry.isEmpty()) {
+                FourthWallArtifacts.LOGGER.warn("Skipping unknown status effect id '{}' in {}", id, settingName);
+                continue;
+            }
+
+            resolved.add(new ResolvedStatusEffect(
+                    effectEntry.get(),
+                    Math.max(0, entry.durationTicks),
+                    Math.max(0, entry.amplifier)
+            ));
+        }
+        return List.copyOf(resolved);
+    }
+
+    private record ResolvedStatusEffect(RegistryEntry<net.minecraft.entity.effect.StatusEffect> effect, int durationTicks, int amplifier) {
     }
 }

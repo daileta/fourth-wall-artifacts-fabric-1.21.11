@@ -1,6 +1,7 @@
 package net.fourthwall.artifacts.item;
 
 import net.fourthwall.artifacts.blood.BloodSacrificeManager;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -11,8 +12,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 
 public class BloodSacrificeItem extends Item implements PolymerFallbackItem {
-    private static final int COOLDOWN_TICKS = 10 * 60 * 20;
-
     public BloodSacrificeItem(Settings settings) {
         super(settings);
     }
@@ -34,7 +33,7 @@ public class BloodSacrificeItem extends Item implements PolymerFallbackItem {
 
         if (user instanceof ServerPlayerEntity serverPlayer) {
             BloodSacrificeManager.activate(serverPlayer);
-            serverPlayer.getItemCooldownManager().set(stack, COOLDOWN_TICKS);
+            serverPlayer.getItemCooldownManager().set(stack, ArtifactsConfigManager.get().bloodSacrifice.itemCooldownTicks);
         }
 
         return ActionResult.SUCCESS;

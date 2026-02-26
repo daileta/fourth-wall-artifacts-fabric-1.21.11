@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "evanpack:item/trident_of_poseidon"
+    "model": "minecraft:item/netherite_chestplate"
   }
 }

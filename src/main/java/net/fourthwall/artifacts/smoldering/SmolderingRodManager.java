@@ -3,6 +3,8 @@ package net.fourthwall.artifacts.smoldering;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fourthwall.artifacts.config.ArtifactsConfig;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -29,14 +31,10 @@ public final class SmolderingRodManager {
     private static final Map<UUID, Set<UUID>> PRIMED_BY_OWNER = new HashMap<>();
     private static final Map<UUID, Set<UUID>> OWNERS_BY_TARGET = new HashMap<>();
     private static final Map<UUID, UUID> ACTIVE_BOBBERS = new HashMap<>();
-    private static SmolderingRodConfig config;
-
     private SmolderingRodManager() {
     }
 
-    public static void init(SmolderingRodConfig cfg) {
-        config = cfg;
-
+    public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(SmolderingRodManager::onEndServerTick);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> clearOwner(handler.player.getUuid()));
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, damageSource) -> removeTarget(entity.getUuid()));
@@ -68,10 +66,6 @@ public final class SmolderingRodManager {
     }
 
     private static void onEndServerTick(MinecraftServer server) {
-        if (config == null) {
-            return;
-        }
-
         List<UUID> ownersToDetonate = new ArrayList<>();
         for (Map.Entry<UUID, UUID> entry : ACTIVE_BOBBERS.entrySet()) {
             UUID ownerId = entry.getKey();
@@ -131,11 +125,11 @@ public final class SmolderingRodManager {
         if (ownerPrimed.contains(targetId)) {
             return;
         }
-        if (ownerPrimed.size() >= config.maxPrimedTargetsPerPlayer) {
+        if (ownerPrimed.size() >= cfg().maxPrimedTargetsPerPlayer) {
             return;
         }
 
-        if (config.lastOwnerWins) {
+        if (cfg().lastOwnerWins) {
             Set<UUID> existingOwners = OWNERS_BY_TARGET.get(targetId);
             if (existingOwners != null) {
                 for (UUID existingOwner : List.copyOf(existingOwners)) {
@@ -161,7 +155,7 @@ public final class SmolderingRodManager {
         if (!candidate.isAlive()) {
             return false;
         }
-        if (!config.friendlyFireRules && candidate instanceof PlayerEntity playerTarget && owner.isTeammate(playerTarget)) {
+        if (!cfg().friendlyFireRules && candidate instanceof PlayerEntity playerTarget && owner.isTeammate(playerTarget)) {
             return false;
         }
         return true;
@@ -188,7 +182,7 @@ public final class SmolderingRodManager {
             DamageSource source = owner != null
                     ? target.getDamageSources().explosion(owner, owner)
                     : target.getDamageSources().explosion(target, null);
-            target.damage(world, source, config.detonationDamage);
+            target.damage(world, source, cfg().detonationDamage);
             removePrime(ownerId, targetId);
         }
     }
@@ -282,5 +276,9 @@ public final class SmolderingRodManager {
             }
         }
         return null;
+    }
+
+    private static ArtifactsConfig.SmolderingRodSection cfg() {
+        return ArtifactsConfigManager.get().smolderingRod;
     }
 }

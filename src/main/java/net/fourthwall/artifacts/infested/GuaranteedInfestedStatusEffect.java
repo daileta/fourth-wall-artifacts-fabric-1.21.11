@@ -1,11 +1,14 @@
 package net.fourthwall.artifacts.infested;
 
 import eu.pb4.polymer.core.api.other.PolymerStatusEffect;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.registry.ModStatusEffects;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.SilverfishEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -15,6 +18,7 @@ import xyz.nucleoid.packettweaker.PacketContext;
 
 public class GuaranteedInfestedStatusEffect extends StatusEffect implements PolymerStatusEffect {
     private static final int COLOR = 0x8CA4CC;
+    private static final int CHAINED_GUARANTEED_INFESTED_DURATION_TICKS = 100;
 
     public GuaranteedInfestedStatusEffect() {
         super(StatusEffectCategory.HARMFUL, COLOR);
@@ -51,6 +55,11 @@ public class GuaranteedInfestedStatusEffect extends StatusEffect implements Poly
                 0.0F
         );
         silverfish.setVelocity(velocity);
+
+        float chance = ArtifactsConfigManager.get().infestedSword.spawnGuaranteedInfestedChance;
+        if (chance > 0.0F && world.getRandom().nextFloat() < chance) {
+            silverfish.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GUARANTEED_INFESTED, CHAINED_GUARANTEED_INFESTED_DURATION_TICKS, 0));
+        }
         world.spawnEntity(silverfish);
     }
 }

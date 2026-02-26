@@ -2,6 +2,7 @@ package net.fourthwall.artifacts.repeater;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -18,7 +19,6 @@ import java.util.UUID;
 
 public final class RepeaterManager {
     private static final int STARTUP_TICKS = 60;
-    private static final int STOP_COOLDOWN_TICKS = 0;
     // Small grace window so rapid re-charge shots count as one firing burst.
     private static final int STOP_FIRING_GRACE_TICKS = 8;
 
@@ -103,12 +103,13 @@ public final class RepeaterManager {
     }
 
     private static void stopFiring(ServerPlayerEntity player, RepeaterState state, long now, ItemStack heldRepeater) {
+        int cooldownTicks = ArtifactsConfigManager.get().repeater.postFiringCooldownTicks;
         state.activeFiring = false;
-        state.cooldownReadyTick = now + STOP_COOLDOWN_TICKS;
+        state.cooldownReadyTick = now + cooldownTicks;
         state.startupReadyTick = 0L;
         removeFiringSlowdown(player);
         if (!heldRepeater.isEmpty()) {
-            setCooldownVisual(player, heldRepeater, STOP_COOLDOWN_TICKS);
+            setCooldownVisual(player, heldRepeater, cooldownTicks);
         }
     }
 

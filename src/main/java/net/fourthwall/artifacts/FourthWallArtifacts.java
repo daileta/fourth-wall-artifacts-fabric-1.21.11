@@ -3,6 +3,8 @@ package net.fourthwall.artifacts;
 import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.fourthwall.artifacts.beacon.BeaconCoreManager;
 import net.fourthwall.artifacts.blood.BloodSacrificeManager;
+import net.fourthwall.artifacts.command.ArtifactsCommands;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -14,7 +16,6 @@ import net.fourthwall.artifacts.registry.ModBlocks;
 import net.fourthwall.artifacts.registry.ModItemGroups;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.fourthwall.artifacts.registry.ModStatusEffects;
-import net.fourthwall.artifacts.smoldering.SmolderingRodConfig;
 import net.fourthwall.artifacts.smoldering.SmolderingRodManager;
 import net.fourthwall.artifacts.voidreaver.VoidReaverAuraManager;
 import net.minecraft.registry.Registries;
@@ -45,14 +46,15 @@ public class FourthWallArtifacts implements ModInitializer {
         }
         logPolymerAutoHostDiagnostics();
 
+        ArtifactsConfigManager.load(LOGGER);
+        ArtifactsCommands.init();
         ModStatusEffects.init();
         ModBlocks.init();
         ModItems.init();
         ModItemGroups.init();
         logRegistrySummary("post-registration");
 
-        SmolderingRodConfig config = SmolderingRodConfig.load(LOGGER);
-        SmolderingRodManager.init(config);
+        SmolderingRodManager.init();
         BloodSacrificeManager.init();
         VoidReaverAuraManager.init();
         InfestedArtifactManager.init();

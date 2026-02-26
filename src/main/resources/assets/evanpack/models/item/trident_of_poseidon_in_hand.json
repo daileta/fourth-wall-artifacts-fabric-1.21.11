@@ -1,5 +1,4 @@
 {
-  "credit": "Derived from vanilla trident_in_hand model for Polymer custom trident rendering",
   "gui_light": "front",
   "textures": {
     "particle": "evanpack:item/trident_of_poseidon"

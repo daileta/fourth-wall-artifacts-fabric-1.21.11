@@ -58,7 +58,7 @@ public class SmolderingRodItem extends FishingRodItem implements PolymerFallback
     @Override
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
-        ensureEnchantments(stack, world);
+        refreshConfiguredStack(stack, world);
     }
 
     @Override
@@ -68,16 +68,24 @@ public class SmolderingRodItem extends FishingRodItem implements PolymerFallback
         textConsumer.accept(Text.translatable("item.evanpack.smoldering_rod.desc.line2"));
     }
 
-    private static void ensureEnchantments(ItemStack stack, ServerWorld world) {
+    public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
+        return ensureEnchantments(stack, world);
+    }
+
+    private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
         var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
         var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
         var mending = enchantments.getOrThrow(Enchantments.MENDING);
+        boolean changed = false;
 
         if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
             stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
+            changed = true;
         }
         if (EnchantmentHelper.getLevel(mending, stack) < MENDING_LEVEL) {
             stack.addEnchantment(mending, MENDING_LEVEL);
+            changed = true;
         }
+        return changed;
     }
 }

@@ -7,6 +7,7 @@ import net.fourthwall.artifacts.item.BeaconAnchorItem;
 import net.fourthwall.artifacts.item.BeaconCoreItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
+import net.fourthwall.artifacts.item.LionsHeartItem;
 import net.fourthwall.artifacts.item.RepeaterCrossbowItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
@@ -47,6 +48,10 @@ public final class ModItems {
     public static final Item INFESTED_PICKAXE = register(
             "infested_pickaxe",
             new InfestedPickaxeItem(withItemSettings("infested_pickaxe").pickaxe(ToolMaterial.NETHERITE, 2.0F, -2.8F).fireproof())
+    );
+    public static final Item LIONS_HEART = register(
+            "lions_heart",
+            new LionsHeartItem(LionsHeartItem.applyChestplateSettings(withItemSettings("lions_heart")))
     );
     public static final Item REPEATER = register(
             "repeater",

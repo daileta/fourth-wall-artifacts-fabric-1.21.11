@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.registry.ModBlocks;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.datafixer.DataFixTypes;
@@ -49,8 +50,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class BeaconCoreManager {
-    private static final double PROTECTION_RADIUS = 75.0D;
-    private static final double PROTECTION_RADIUS_SQUARED = PROTECTION_RADIUS * PROTECTION_RADIUS;
     private static final long HAZARD_TRACK_TTL_TICKS = 20L * 60L * 5L;
     private static final long FIRE_TRACK_TTL_TICKS = 20L * 60L * 2L;
     private static final long RESPAWN_ANCHOR_TRACK_TTL_TICKS = 40L;
@@ -251,7 +250,8 @@ public final class BeaconCoreManager {
             clearAnchor(server);
             return false;
         }
-        return player.squaredDistanceTo(activeAnchor.pos().toCenterPos()) <= PROTECTION_RADIUS_SQUARED;
+        double radius = ArtifactsConfigManager.get().beaconCore.anchorProtectionRadius;
+        return player.squaredDistanceTo(activeAnchor.pos().toCenterPos()) <= (radius * radius);
     }
 
     private static boolean isHoldingBeaconCore(PlayerEntity player) {

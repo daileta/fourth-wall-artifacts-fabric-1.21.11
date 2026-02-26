@@ -2,24 +2,34 @@ package net.fourthwall.artifacts.poseidon;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.config.ArtifactsConfig;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.EntityAttributeInstance;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,26 +38,39 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class PoseidonTridentManager {
-    private static final int HOLDING_BUFF_DURATION_TICKS = 10;
-    private static final int SPECIAL_COOLDOWN_TICKS = 300;
-    private static final int MAX_CHANNELING_TICKS = 100;
-    private static final int BEAM_RADIUS = 6;
     private static final int BEAM_VISUAL_INTERVAL = 2;
     private static final int BEAM_DAMAGE_INTERVAL = 10;
-    private static final float BEAM_DAMAGE = 6.0F;
     private static final float RETALIATION_DAMAGE = 8.0F;
+    private static final Identifier CHANNELING_MOVEMENT_MODIFIER_ID = FourthWallArtifacts.id("poseidon_channeling_speed");
     private static final Map<UUID, Integer> SPECIAL_COOLDOWNS = new HashMap<>();
     private static final Set<UUID> CHANNELING_PLAYERS = new HashSet<>();
     private static final Map<UUID, Integer> CHANNELING_DURATIONS = new HashMap<>();
     private static final Map<UUID, Vec3d> CHANNELING_LOCK_POSITIONS = new HashMap<>();
+    private static List<ResolvedStatusEffect> holdingBuffs = List.of();
+    private static EntityAttributeModifier channelingMovementModifier = new EntityAttributeModifier(
+            CHANNELING_MOVEMENT_MODIFIER_ID,
+            -1.0D,
+            EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+    );
     private static int retaliationDepth = 0;
 
     private PoseidonTridentManager() {
     }
 
     public static void init() {
+        reloadConfig(null);
         ServerTickEvents.END_SERVER_TICK.register(PoseidonTridentManager::onEndServerTick);
         ServerLivingEntityEvents.AFTER_DAMAGE.register(PoseidonTridentManager::onAfterDamage);
+    }
+
+    public static void reloadConfig(MinecraftServer server) {
+        holdingBuffs = resolveConfiguredEffects(ArtifactsConfigManager.get().tridentOfPoseidon.holdingEffects, "tridentOfPoseidon.holdingEffects");
+        channelingMovementModifier = createChannelingMovementModifier();
+        if (server != null) {
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                removeChannelingMovementModifier(player);
+            }
+        }
     }
 
     private static void onEndServerTick(MinecraftServer server) {
@@ -57,28 +80,31 @@ public final class PoseidonTridentManager {
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             if (!isHoldingPoseidonTrident(player)) {
+                removeChannelingMovementModifier(player);
                 continue;
             }
 
             applyHoldingBuffs(player);
 
             if (!canUsePoseidonSpecial(player)) {
+                removeChannelingMovementModifier(player);
                 continue;
             }
 
             UUID uuid = player.getUuid();
             int nextChannelTicks = CHANNELING_DURATIONS.getOrDefault(uuid, 0) + 1;
-            if (nextChannelTicks > MAX_CHANNELING_TICKS) {
-                SPECIAL_COOLDOWNS.put(uuid, SPECIAL_COOLDOWN_TICKS);
+            if (nextChannelTicks > ArtifactsConfigManager.get().tridentOfPoseidon.beamDurationTicks) {
+                SPECIAL_COOLDOWNS.put(uuid, ArtifactsConfigManager.get().tridentOfPoseidon.beamCooldownTicks);
                 CHANNELING_DURATIONS.remove(uuid);
                 CHANNELING_LOCK_POSITIONS.remove(uuid);
+                removeChannelingMovementModifier(player);
                 continue;
             }
 
             CHANNELING_DURATIONS.put(uuid, nextChannelTicks);
             channelingThisTick.add(uuid);
             CHANNELING_LOCK_POSITIONS.putIfAbsent(uuid, new Vec3d(player.getX(), player.getY(), player.getZ()));
-            lockPlayerMovement(player);
+            applyChannelingMovementControl(player);
             spawnStanceParticles(player, tick);
 
             List<LivingEntity> targets = getBeamTargets(player);
@@ -97,9 +123,13 @@ public final class PoseidonTridentManager {
 
         for (UUID uuid : Set.copyOf(CHANNELING_PLAYERS)) {
             if (!channelingThisTick.contains(uuid)) {
-                SPECIAL_COOLDOWNS.put(uuid, SPECIAL_COOLDOWN_TICKS);
+                SPECIAL_COOLDOWNS.put(uuid, ArtifactsConfigManager.get().tridentOfPoseidon.beamCooldownTicks);
                 CHANNELING_DURATIONS.remove(uuid);
                 CHANNELING_LOCK_POSITIONS.remove(uuid);
+                ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+                if (player != null) {
+                    removeChannelingMovementModifier(player);
+                }
             }
         }
 
@@ -134,17 +164,16 @@ public final class PoseidonTridentManager {
     }
 
     private static void applyHoldingBuffs(ServerPlayerEntity player) {
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.DOLPHINS_GRACE, HOLDING_BUFF_DURATION_TICKS, 0, true, false));
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, HOLDING_BUFF_DURATION_TICKS + 40, 0, true, false));
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.CONDUIT_POWER, HOLDING_BUFF_DURATION_TICKS, 0, true, false));
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.WATER_BREATHING, HOLDING_BUFF_DURATION_TICKS, 0, true, false));
+        for (ResolvedStatusEffect effect : holdingBuffs) {
+            player.addStatusEffect(new StatusEffectInstance(effect.effect(), effect.durationTicks(), effect.amplifier(), true, false));
+        }
     }
 
     private static List<LivingEntity> getBeamTargets(ServerPlayerEntity player) {
         ServerWorld world = (ServerWorld) player.getEntityWorld();
         return world.getEntitiesByClass(
                 LivingEntity.class,
-                player.getBoundingBox().expand(BEAM_RADIUS),
+                player.getBoundingBox().expand(ArtifactsConfigManager.get().tridentOfPoseidon.beamRange),
                 target -> isValidBeamTarget(player, target)
         );
     }
@@ -164,7 +193,7 @@ public final class PoseidonTridentManager {
         world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_GUARDIAN_ATTACK, SoundCategory.PLAYERS, 0.7F, 1.0F);
 
         for (LivingEntity target : targets) {
-            target.damage(world, target.getDamageSources().playerAttack(player), BEAM_DAMAGE);
+            target.damage(world, target.getDamageSources().playerAttack(player), ArtifactsConfigManager.get().tridentOfPoseidon.beamDamage);
             world.spawnParticles(ParticleTypes.ELECTRIC_SPARK, target.getX(), target.getBodyY(0.5), target.getZ(), 8, 0.2, 0.2, 0.2, 0.02);
             world.spawnParticles(ParticleTypes.BUBBLE, target.getX(), target.getBodyY(0.5), target.getZ(), 10, 0.25, 0.25, 0.25, 0.02);
         }
@@ -219,6 +248,21 @@ public final class PoseidonTridentManager {
         return hitResult.getType() == HitResult.Type.MISS;
     }
 
+    private static void applyChannelingMovementControl(ServerPlayerEntity player) {
+        double speedMultiplier = ArtifactsConfigManager.get().tridentOfPoseidon.beamMovementSpeedMultiplierWhileChanneling;
+        if (speedMultiplier <= 0.0D) {
+            removeChannelingMovementModifier(player);
+            lockPlayerMovement(player);
+            return;
+        }
+
+        EntityAttributeInstance movementSpeed = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
+        if (movementSpeed != null && !movementSpeed.hasModifier(CHANNELING_MOVEMENT_MODIFIER_ID)) {
+            movementSpeed.addTemporaryModifier(channelingMovementModifier);
+        }
+        player.setVelocity(player.getVelocity().x, 0.0D, player.getVelocity().z);
+    }
+
     private static void lockPlayerMovement(ServerPlayerEntity player) {
         Vec3d lockPos = CHANNELING_LOCK_POSITIONS.get(player.getUuid());
         if (lockPos == null) {
@@ -231,6 +275,14 @@ public final class PoseidonTridentManager {
         }
     }
 
+    private static void removeChannelingMovementModifier(ServerPlayerEntity player) {
+        EntityAttributeInstance movementSpeed = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
+        if (movementSpeed == null) {
+            return;
+        }
+        movementSpeed.removeModifier(CHANNELING_MOVEMENT_MODIFIER_ID);
+    }
+
     private static boolean isHoldingPoseidonTrident(PlayerEntity player) {
         return player.getMainHandStack().isOf(ModItems.TRIDENT_OF_POSEIDON) || player.getOffHandStack().isOf(ModItems.TRIDENT_OF_POSEIDON);
     }
@@ -240,7 +292,10 @@ public final class PoseidonTridentManager {
     }
 
     private static boolean isPoseidonStanceConditionsMet(ServerPlayerEntity player) {
-        return isHoldingPoseidonTrident(player) && player.isSneaking() && player.isTouchingWaterOrRain();
+        boolean wetCondition = ArtifactsConfigManager.get().tridentOfPoseidon.allowBeamInRain
+                ? player.isTouchingWaterOrRain()
+                : player.isTouchingWater();
+        return isHoldingPoseidonTrident(player) && player.isSneaking() && wetCondition;
     }
 
     private static boolean isHoldingShield(PlayerEntity player) {
@@ -260,5 +315,45 @@ public final class PoseidonTridentManager {
                 SPECIAL_COOLDOWNS.put(uuid, next);
             }
         }
+    }
+
+    private static EntityAttributeModifier createChannelingMovementModifier() {
+        double amount = ArtifactsConfigManager.get().tridentOfPoseidon.beamMovementSpeedMultiplierWhileChanneling - 1.0D;
+        return new EntityAttributeModifier(CHANNELING_MOVEMENT_MODIFIER_ID, amount, EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+    }
+
+    private static List<ResolvedStatusEffect> resolveConfiguredEffects(List<ArtifactsConfig.StatusEffectEntry> entries, String settingName) {
+        if (entries == null || entries.isEmpty()) {
+            return List.of();
+        }
+
+        List<ResolvedStatusEffect> resolved = new ArrayList<>();
+        for (ArtifactsConfig.StatusEffectEntry entry : entries) {
+            if (entry == null || entry.effectId == null) {
+                continue;
+            }
+
+            Identifier id = Identifier.tryParse(entry.effectId);
+            if (id == null) {
+                FourthWallArtifacts.LOGGER.warn("Skipping invalid status effect id '{}' in {}", entry.effectId, settingName);
+                continue;
+            }
+
+            var effectEntry = Registries.STATUS_EFFECT.getEntry(id);
+            if (effectEntry.isEmpty()) {
+                FourthWallArtifacts.LOGGER.warn("Skipping unknown status effect id '{}' in {}", id, settingName);
+                continue;
+            }
+
+            resolved.add(new ResolvedStatusEffect(
+                    effectEntry.get(),
+                    Math.max(0, entry.durationTicks),
+                    Math.max(0, entry.amplifier)
+            ));
+        }
+        return List.copyOf(resolved);
+    }
+
+    private record ResolvedStatusEffect(RegistryEntry<net.minecraft.entity.effect.StatusEffect> effect, int durationTicks, int amplifier) {
     }
 }
