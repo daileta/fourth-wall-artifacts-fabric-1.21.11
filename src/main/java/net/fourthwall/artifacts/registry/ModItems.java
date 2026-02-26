@@ -5,6 +5,7 @@ import net.fourthwall.artifacts.item.PolymerFallbackItem;
 import net.fourthwall.artifacts.item.BloodSacrificeItem;
 import net.fourthwall.artifacts.item.BeaconAnchorItem;
 import net.fourthwall.artifacts.item.BeaconCoreItem;
+import net.fourthwall.artifacts.item.EarthsplitterItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
 import net.fourthwall.artifacts.item.LionsHeartItem;
@@ -67,6 +68,15 @@ public final class ModItems {
                             .fireproof()
             )
     );
+    public static final Item EARTHSPLITTER = register(
+        "earthsplitter",
+        new EarthsplitterItem(
+                withItemSettings("earthsplitter")
+                        .maxDamage(500)
+                        .attributeModifiers(EarthsplitterItem.createEarthsplitterAttributeModifiers())
+                        .fireproof()
+        )
+);
     public static final Item BEACON_CORE = register(
             "beacon_core",
             new BeaconCoreItem(withItemSettings("beacon_core").maxCount(1))

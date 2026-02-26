@@ -8,6 +8,7 @@ import net.fourthwall.artifacts.item.RepeaterCrossbowItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
+import net.fourthwall.artifacts.item.EarthsplitterItem;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
@@ -158,6 +159,9 @@ public final class ArtifactReloadApplier {
         }
         if (stack.getItem() instanceof VoidReaverItem) {
             return VoidReaverItem.refreshConfiguredStack(stack, world);
+        }
+        if (stack.getItem() instanceof EarthsplitterItem) {
+            return EarthsplitterItem.refreshConfiguredStack(stack, world);
         }
 
         return false;

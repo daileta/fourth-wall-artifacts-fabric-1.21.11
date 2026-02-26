@@ -13,6 +13,8 @@ import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.text.Text;
+
 
 public class InfestedPickaxeItem extends Item implements PolymerFallbackItem {
     private static final float BASE_MINING_SPEED = 26.0F;

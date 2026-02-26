@@ -47,6 +47,23 @@ public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
         return ensureEnchantments(stack, world);
     }
 
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("☠ ").styled(s -> s.withColor(0xC745FF)))
+            .append(Text.literal("V").styled(s -> s.withColor(0xB63FEA).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xA63AD5).withBold(true)))
+            .append(Text.literal("i").styled(s -> s.withColor(0x9534BF).withBold(true)))
+            .append(Text.literal("d").styled(s -> s.withColor(0x852EAA).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0x742895).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0x642380).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0x531D6A).withBold(true)))
+            .append(Text.literal("v").styled(s -> s.withColor(0x421755).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0x321140).withBold(true)))
+            .append(Text.literal("r ").styled(s -> s.withColor(0x210C2B).withBold(true)))
+            .append(Text.literal("☠").styled(s -> s.withColor(0x000000)));
+    }
+
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
         var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
         var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
