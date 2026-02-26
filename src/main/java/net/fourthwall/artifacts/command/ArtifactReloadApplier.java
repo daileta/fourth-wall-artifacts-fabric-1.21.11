@@ -9,6 +9,7 @@ import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
 import net.fourthwall.artifacts.item.EarthsplitterItem;
+import net.fourthwall.artifacts.item.EmporersCrownItem;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
@@ -162,6 +163,9 @@ public final class ArtifactReloadApplier {
         }
         if (stack.getItem() instanceof EarthsplitterItem) {
             return EarthsplitterItem.refreshConfiguredStack(stack, world);
+        }
+        if (stack.getItem() instanceof EmporersCrownItem) {
+            return EmporersCrownItem.refreshConfiguredStack(stack, world);
         }
 
         return false;

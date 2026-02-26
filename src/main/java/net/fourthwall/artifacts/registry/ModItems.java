@@ -6,6 +6,7 @@ import net.fourthwall.artifacts.item.BloodSacrificeItem;
 import net.fourthwall.artifacts.item.BeaconAnchorItem;
 import net.fourthwall.artifacts.item.BeaconCoreItem;
 import net.fourthwall.artifacts.item.EarthsplitterItem;
+import net.fourthwall.artifacts.item.EmporersCrownItem;
 import net.fourthwall.artifacts.item.InfestedPickaxeItem;
 import net.fourthwall.artifacts.item.InfestedSwordItem;
 import net.fourthwall.artifacts.item.LionsHeartItem;
@@ -86,6 +87,10 @@ public final class ModItems {
                                 .attributeModifiers(ExcaliburItem.createExcaliburAttributeModifiers())
                 )
         );
+    public static final Item EMPORERS_CROWN = register(
+            "emporers_crown",
+            new EmporersCrownItem(EmporersCrownItem.applyHelmetSettings(withItemSettings("emporers_crown")))
+    );
     public static final Item BEACON_CORE = register(
             "beacon_core",
             new BeaconCoreItem(withItemSettings("beacon_core").maxCount(1))
