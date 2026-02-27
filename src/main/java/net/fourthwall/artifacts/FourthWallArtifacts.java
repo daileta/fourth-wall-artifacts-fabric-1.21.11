@@ -39,8 +39,7 @@ public class FourthWallArtifacts implements ModInitializer {
 
         try {
             PolymerResourcePackUtils.addModAssets(MOD_ID);
-            PolymerResourcePackUtils.markAsRequired();
-            LOGGER.info("Polymer resource pack assets registered and marked required for mod '{}'", MOD_ID);
+            LOGGER.info("Polymer resource pack assets registered for mod '{}'", MOD_ID);
         } catch (Throwable throwable) {
             LOGGER.error("Failed to initialize Polymer resource pack integration. Vanilla-client compatibility may be degraded.", throwable);
         }

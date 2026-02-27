@@ -604,11 +604,8 @@ public final class BloodSacrificeManager {
         ));
 
         if (guardian.getEntityWorld() instanceof ServerWorld world) {
-            long seed = world.getRandom().nextLong();
             world.playSound(null, guardian.getX(), guardian.getY(), guardian.getZ(),
-                    SoundEvents.ENTITY_WARDEN_DIG, SoundCategory.HOSTILE, 0.9F, 1.15F, seed);
-            world.playSound(null, guardian.getX(), guardian.getY(), guardian.getZ(),
-                    SoundEvents.ENTITY_WARDEN_EMERGE, SoundCategory.HOSTILE, 1.15F, 1.0F, seed + 1L);
+                    SoundEvents.ENTITY_WARDEN_NEARBY_CLOSER, SoundCategory.HOSTILE, 1.15F, 1.0F, world.getRandom().nextLong());
         }
     }
 

@@ -1,0 +1,9 @@
+{
+  "blood_guardian_summon": {
+    "sounds": [
+      {
+        "name": "evanpack:summon"
+      }
+    ]
+  }
+}

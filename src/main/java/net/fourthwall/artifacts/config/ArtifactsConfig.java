@@ -6,7 +6,10 @@ import com.google.gson.JsonObject;
 import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class ArtifactsConfig {
     static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
@@ -19,6 +22,7 @@ public final class ArtifactsConfig {
     public BeaconCoreSection beaconCore = new BeaconCoreSection();
     public TridentOfPoseidonSection tridentOfPoseidon = new TridentOfPoseidonSection();
     public LionsHeartChestplateSection lionsHeartChestplate = new LionsHeartChestplateSection();
+    public ArtifactEnchantSection artifactEnchants = new ArtifactEnchantSection();
 
     public void sanitize() {
         if (smolderingRod == null) {
@@ -45,6 +49,9 @@ public final class ArtifactsConfig {
         if (lionsHeartChestplate == null) {
             lionsHeartChestplate = new LionsHeartChestplateSection();
         }
+        if (artifactEnchants == null) {
+            artifactEnchants = new ArtifactEnchantSection();
+        }
 
         smolderingRod.sanitize();
         infestedSword.sanitize();
@@ -54,6 +61,7 @@ public final class ArtifactsConfig {
         beaconCore.sanitize();
         tridentOfPoseidon.sanitize();
         lionsHeartChestplate.sanitize();
+        artifactEnchants.sanitize();
     }
 
     JsonObject toDocumentedJson() {
@@ -71,6 +79,7 @@ public final class ArtifactsConfig {
         root.add("beaconCore", buildBeaconCoreJson(this.beaconCore, defaults.beaconCore));
         root.add("tridentOfPoseidon", buildTridentJson(this.tridentOfPoseidon, defaults.tridentOfPoseidon));
         root.add("lionHeartChestplate", buildLionHeartJson(this.lionsHeartChestplate, defaults.lionsHeartChestplate));
+        root.add("artifactEnchants", buildArtifactEnchantsJson(this.artifactEnchants, defaults.artifactEnchants));
         return root;
     }
 
@@ -188,6 +197,15 @@ public final class ArtifactsConfig {
         return obj;
     }
 
+    private static JsonObject buildArtifactEnchantsJson(ArtifactEnchantSection current, ArtifactEnchantSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "enforceExact", current.enforceExact, defaults.enforceExact);
+        addDoc(obj, "levels", current.levels, defaults.levels);
+        obj.addProperty("levels_note", "Map format: <item_id>: { <enchantment_id>: <level> }. Use level 0 to remove an enchant.");
+        obj.addProperty("future_artifacts_note", "Add new artifact item IDs here to configure enchantments for future artifact items without code changes.");
+        return obj;
+    }
+
     private static void addDoc(JsonObject obj, String key, int value, int defaultValue) {
         obj.addProperty(key, value);
         obj.addProperty(key + "_default", defaultValue);
@@ -251,6 +269,84 @@ public final class ArtifactsConfig {
             effect.durationTicks = nonNegative(effect.durationTicks);
             effect.amplifier = nonNegative(effect.amplifier);
         }
+    }
+
+    private static LinkedHashMap<String, LinkedHashMap<String, Integer>> defaultArtifactEnchantLevels() {
+        LinkedHashMap<String, LinkedHashMap<String, Integer>> levels = new LinkedHashMap<>();
+        levels.put("evanpack:smoldering_rod", enchantLevels(
+                "minecraft:unbreaking", 3,
+                "minecraft:mending", 1
+        ));
+        levels.put("evanpack:void_reaver", enchantLevels(
+                "minecraft:unbreaking", 3,
+                "minecraft:mending", 1,
+                "minecraft:sharpness", 5
+        ));
+        levels.put("evanpack:infested_sword", enchantLevels(
+                "minecraft:sharpness", 5,
+                "minecraft:fire_aspect", 2,
+                "minecraft:sweeping_edge", 3,
+                "minecraft:unbreaking", 3,
+                "minecraft:mending", 1,
+                "minecraft:looting", 3
+        ));
+        levels.put("evanpack:infested_pickaxe", enchantLevels(
+                "minecraft:unbreaking", 3,
+                "minecraft:efficiency", 5,
+                "minecraft:mending", 1
+        ));
+        levels.put("evanpack:lions_heart", enchantLevels(
+                "minecraft:protection", 4,
+                "minecraft:projectile_protection", 4,
+                "minecraft:fire_protection", 4,
+                "minecraft:blast_protection", 4,
+                "minecraft:unbreaking", 3,
+                "minecraft:mending", 1
+        ));
+        levels.put("evanpack:repeater", enchantLevels(
+                "minecraft:power", 3,
+                "minecraft:piercing", 4,
+                "minecraft:quick_charge", 5,
+                "minecraft:unbreaking", 5,
+                "minecraft:mending", 1
+        ));
+        levels.put("evanpack:trident_of_poseidon", enchantLevels(
+                "minecraft:riptide", 3,
+                "minecraft:unbreaking", 3,
+                "minecraft:mending", 1,
+                "minecraft:impaling", 5
+        ));
+        levels.put("evanpack:earthsplitter", enchantLevels(
+                "minecraft:density", 5,
+                "minecraft:breach", 5,
+                "minecraft:unbreaking", 5
+        ));
+        levels.put("evanpack:excalibur", enchantLevels(
+                "minecraft:sharpness", 10,
+                "minecraft:breach", 3,
+                "minecraft:looting", 3,
+                "minecraft:sweeping_edge", 3,
+                "minecraft:mending", 1,
+                "minecraft:unbreaking", 3
+        ));
+        levels.put("evanpack:emperors_crown", enchantLevels(
+                "minecraft:protection", 4,
+                "minecraft:aqua_affinity", 1,
+                "minecraft:respiration", 3,
+                "minecraft:mending", 1,
+                "minecraft:unbreaking", 3
+        ));
+        return levels;
+    }
+
+    private static LinkedHashMap<String, Integer> enchantLevels(Object... entries) {
+        LinkedHashMap<String, Integer> levels = new LinkedHashMap<>();
+        for (int index = 0; index + 1 < entries.length; index += 2) {
+            String key = (String) entries[index];
+            int value = (Integer) entries[index + 1];
+            levels.put(key, value);
+        }
+        return levels;
     }
 
     public static final class SmolderingRodSection {
@@ -453,6 +549,47 @@ public final class ArtifactsConfig {
             maxHealthIncrease = nonNegative(maxHealthIncrease);
             armorLevel = nonNegative(armorLevel);
             armorToughness = nonNegative(armorToughness);
+        }
+    }
+
+    public static final class ArtifactEnchantSection {
+        public boolean enforceExact = true;
+        public LinkedHashMap<String, LinkedHashMap<String, Integer>> levels = defaultArtifactEnchantLevels();
+
+        private void sanitize() {
+            if (levels == null) {
+                levels = defaultArtifactEnchantLevels();
+                return;
+            }
+
+            Iterator<Map.Entry<String, LinkedHashMap<String, Integer>>> itemIterator = levels.entrySet().iterator();
+            while (itemIterator.hasNext()) {
+                Map.Entry<String, LinkedHashMap<String, Integer>> itemEntry = itemIterator.next();
+                String itemId = itemEntry.getKey();
+                if (itemId == null || itemId.isBlank()) {
+                    itemIterator.remove();
+                    continue;
+                }
+
+                LinkedHashMap<String, Integer> itemEnchants = itemEntry.getValue();
+                if (itemEnchants == null) {
+                    itemEntry.setValue(new LinkedHashMap<>());
+                    continue;
+                }
+
+                Iterator<Map.Entry<String, Integer>> enchantIterator = itemEnchants.entrySet().iterator();
+                while (enchantIterator.hasNext()) {
+                    Map.Entry<String, Integer> enchantEntry = enchantIterator.next();
+                    String enchantId = enchantEntry.getKey();
+                    if (enchantId == null || enchantId.isBlank()) {
+                        enchantIterator.remove();
+                        continue;
+                    }
+
+                    Integer level = enchantEntry.getValue();
+                    enchantEntry.setValue(nonNegative(level == null ? 0 : level));
+                }
+            }
         }
     }
 
