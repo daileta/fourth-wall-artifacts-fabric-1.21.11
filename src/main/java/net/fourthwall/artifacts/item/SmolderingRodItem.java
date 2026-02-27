@@ -17,6 +17,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.minecraft.text.Text;
 
 import java.util.function.Consumer;
 
@@ -59,6 +60,24 @@ public class SmolderingRodItem extends FishingRodItem implements PolymerFallback
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
         refreshConfiguredStack(stack, world);
+    }
+
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("S").styled(s -> s.withColor(0xED0909).withBold(true)))
+            .append(Text.literal("m").styled(s -> s.withColor(0xF01F0C).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xF3340F).withBold(true)))
+            .append(Text.literal("l").styled(s -> s.withColor(0xF54A12).withBold(true)))
+            .append(Text.literal("d").styled(s -> s.withColor(0xF85F15).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xFB7518).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFE8A1B).withBold(true)))
+            .append(Text.literal("i").styled(s -> s.withColor(0xFF9C1C).withBold(true)))
+            .append(Text.literal("n").styled(s -> s.withColor(0xFFAA1C).withBold(true)))
+            .append(Text.literal("g ").styled(s -> s.withColor(0xFFB81C).withBold(true)))
+            .append(Text.literal("R").styled(s -> s.withColor(0xFFC61C).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xFFD41C).withBold(true)))
+            .append(Text.literal("d").styled(s -> s.withColor(0xFFF01C).withBold(true)));
     }
 
     @Override

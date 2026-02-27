@@ -35,15 +35,15 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
     @Override
     public Text getName(ItemStack stack) {
         return Text.empty()
-            .append(Text.literal("E").styled(s -> s.withColor(0xE81CFF).withBold(true)))
-            .append(Text.literal("x").styled(s -> s.withColor(0xE21EFB).withBold(true)))
-            .append(Text.literal("a").styled(s -> s.withColor(0xDD1FF7).withBold(true)))
-            .append(Text.literal("c").styled(s -> s.withColor(0xD721F2).withBold(true)))
-            .append(Text.literal("l").styled(s -> s.withColor(0xD223EE).withBold(true)))
-            .append(Text.literal("i").styled(s -> s.withColor(0xCC24EA).withBold(true)))
-            .append(Text.literal("b").styled(s -> s.withColor(0xC726E6).withBold(true)))
-            .append(Text.literal("u").styled(s -> s.withColor(0xC128E1).withBold(true)))
-            .append(Text.literal("r").styled(s -> s.withColor(0xB62BD9).withBold(true)));
+            .append(Text.literal("E").styled(s -> s.withColor(0xFFFFFF).withBold(true)))
+            .append(Text.literal("x").styled(s -> s.withColor(0xD6F0FF).withBold(true)))
+            .append(Text.literal("c").styled(s -> s.withColor(0xADE1FF).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0x84D2FF).withBold(true)))
+            .append(Text.literal("l").styled(s -> s.withColor(0x5BC3FF).withBold(true)))
+            .append(Text.literal("i").styled(s -> s.withColor(0x5BC2EC).withBold(true)))
+            .append(Text.literal("b").styled(s -> s.withColor(0x84CEC5).withBold(true)))
+            .append(Text.literal("u").styled(s -> s.withColor(0xADDB9F).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFFF352).withBold(true)));
     }
 
     public static AttributeModifiersComponent createExcaliburAttributeModifiers() {

@@ -20,6 +20,7 @@ import net.minecraft.item.equipment.ArmorMaterials;
 import net.minecraft.item.equipment.EquipmentType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 
 import java.util.EnumMap;
 
@@ -46,6 +47,25 @@ public class LionsHeartItem extends Item implements PolymerFallbackItem {
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
         refreshConfiguredStack(stack, world);
+    }
+
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("T").styled(s -> s.withColor(0xC69452).withBold(true)))
+            .append(Text.literal("h").styled(s -> s.withColor(0xC99A5A).withBold(true)))
+            .append(Text.literal("e ").styled(s -> s.withColor(0xCBA062).withBold(true)))
+            .append(Text.literal("L").styled(s -> s.withColor(0xCEA76B).withBold(true)))
+            .append(Text.literal("i").styled(s -> s.withColor(0xD1AD73).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xD3B37B).withBold(true)))
+            .append(Text.literal("n").styled(s -> s.withColor(0xD6B983).withBold(true)))
+            .append(Text.literal("'").styled(s -> s.withColor(0xD9C08C).withBold(true)))
+            .append(Text.literal("s ").styled(s -> s.withColor(0xDECC9C).withBold(true)))
+            .append(Text.literal("H").styled(s -> s.withColor(0xDE5252).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xD94747).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0xD43C3C).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xD03030).withBold(true)))
+            .append(Text.literal("t").styled(s -> s.withColor(0xC61A1A).withBold(true)));
     }
 
     private static ArmorMaterial createLionsHeartMaterial() {

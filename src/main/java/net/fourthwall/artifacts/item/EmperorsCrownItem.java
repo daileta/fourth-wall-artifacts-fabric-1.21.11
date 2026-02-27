@@ -58,6 +58,28 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
         refreshConfiguredStack(stack, world);
     }
 
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("T").styled(s -> s.withColor(0xFFB914).withBold(true)))
+            .append(Text.literal("h").styled(s -> s.withColor(0xFFBC17).withBold(true)))
+            .append(Text.literal("e ").styled(s -> s.withColor(0xFFC019).withBold(true)))
+            .append(Text.literal("E").styled(s -> s.withColor(0xFFC31C).withBold(true)))
+            .append(Text.literal("m").styled(s -> s.withColor(0xFFC61F).withBold(true)))
+            .append(Text.literal("p").styled(s -> s.withColor(0xFFCA22).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xFFCD24).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFFD027).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xFFD42A).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFFD72C).withBold(true)))
+            .append(Text.literal("'").styled(s -> s.withColor(0xFFDB2F).withBold(true)))
+            .append(Text.literal("s ").styled(s -> s.withColor(0xFFDE32).withBold(true)))
+            .append(Text.literal("C").styled(s -> s.withColor(0xFFE134).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xFFE537).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xFFE83A).withBold(true)))
+            .append(Text.literal("w").styled(s -> s.withColor(0xFFEB3D).withBold(true)))
+            .append(Text.literal("n").styled(s -> s.withColor(0xFFF242).withBold(true)));
+    }
+
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
         boolean changed = false;
 
@@ -72,14 +94,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
             stack.set(DataComponentTypes.UNBREAKABLE, Unit.INSTANCE);
             changed = true;
         }
-
-        Text desiredName = createDisplayName();
-        Text currentName = stack.get(DataComponentTypes.CUSTOM_NAME);
-        if (!Objects.equals(desiredName, currentName)) {
-            stack.set(DataComponentTypes.CUSTOM_NAME, desiredName);
-            changed = true;
-        }
-
+        
         LoreComponent desiredLore = createLore();
         LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
         if (!Objects.equals(desiredLore, currentLore)) {
@@ -194,10 +209,6 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                         ),
                         AttributeModifierSlot.HEAD
                 );
-    }
-
-    private static Text createDisplayName() {
-        return Text.literal("The Emperor's Crown").styled(style -> style.withColor(0xFFCA22).withBold(true));
     }
 
     private static LoreComponent createLore() {
