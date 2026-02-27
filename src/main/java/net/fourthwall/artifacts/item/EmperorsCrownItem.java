@@ -27,7 +27,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
-public class EmporersCrownItem extends Item implements PolymerFallbackItem {
+public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
     private static final int PROTECTION_LEVEL = 4;
     private static final int AQUA_AFFINITY_LEVEL = 1;
     private static final int RESPIRATION_LEVEL = 3;
@@ -35,7 +35,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
     private static final int UNBREAKING_LEVEL = 3;
     private static final String CUSTOM_MODEL_TAG = "Alexandria's Artifact";
 
-    public EmporersCrownItem(Settings settings) {
+    public EmperorsCrownItem(Settings settings) {
         super(settings);
     }
 
@@ -152,7 +152,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
                 .with(
                         EntityAttributes.MOVEMENT_SPEED,
                         new EntityAttributeModifier(
-                                FourthWallArtifacts.id("emporers_crown_movement_speed"),
+                                FourthWallArtifacts.id("emperors_crown_movement_speed"),
                                 0.2D,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
@@ -161,7 +161,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
                 .with(
                         EntityAttributes.JUMP_STRENGTH,
                         new EntityAttributeModifier(
-                                FourthWallArtifacts.id("emporers_crown_jump_strength"),
+                                FourthWallArtifacts.id("emperors_crown_jump_strength"),
                                 0.18D,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
@@ -170,7 +170,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
                 .with(
                         EntityAttributes.ATTACK_DAMAGE,
                         new EntityAttributeModifier(
-                                FourthWallArtifacts.id("emporers_crown_attack_damage"),
+                                FourthWallArtifacts.id("emperors_crown_attack_damage"),
                                 3.0D,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
@@ -179,7 +179,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
                 .with(
                         EntityAttributes.ENTITY_INTERACTION_RANGE,
                         new EntityAttributeModifier(
-                                FourthWallArtifacts.id("emporers_crown_entity_interaction_range"),
+                                FourthWallArtifacts.id("emperors_crown_entity_interaction_range"),
                                 1.5D,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
@@ -188,7 +188,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
                 .with(
                         EntityAttributes.BLOCK_INTERACTION_RANGE,
                         new EntityAttributeModifier(
-                                FourthWallArtifacts.id("emporers_crown_block_interaction_range"),
+                                FourthWallArtifacts.id("emperors_crown_block_interaction_range"),
                                 2.0D,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
@@ -197,7 +197,7 @@ public class EmporersCrownItem extends Item implements PolymerFallbackItem {
     }
 
     private static Text createDisplayName() {
-        return Text.literal("The Emporer's Crown").styled(style -> style.withColor(0xFFCA22).withBold(true));
+        return Text.literal("The Emperor's Crown").styled(style -> style.withColor(0xFFCA22).withBold(true));
     }
 
     private static LoreComponent createLore() {
