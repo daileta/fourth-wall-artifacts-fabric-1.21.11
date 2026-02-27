@@ -5,6 +5,7 @@ import eu.pb4.polymer.resourcepack.api.PolymerResourcePackUtils;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.packettweaker.PacketContext;
@@ -20,12 +21,19 @@ public interface PolymerFallbackItem extends PolymerItem {
     @Override
     @Nullable
     default Identifier getPolymerItemModel(ItemStack stack, PacketContext context) {
-        // Phase 2: if the client has the Polymer-generated pack, point the fallback item at this item's custom item model.
-        if (!PolymerResourcePackUtils.hasMainPack(context)) {
+        // Keep dedicated-server behavior strict for vanilla clients, but allow integrated singleplayer
+        // to use local mod assets without requiring a generated/served Polymer pack.
+        boolean hasMainPack = PolymerResourcePackUtils.hasMainPack(context);
+        ServerPlayerEntity player = context.getPlayer();
+        boolean integratedSingleplayer = player != null
+                && player.getEntityWorld().getServer() != null
+                && !player.getEntityWorld().getServer().isDedicated();
+
+        if (!hasMainPack && !integratedSingleplayer) {
             return null;
         }
         Identifier itemId = Registries.ITEM.getId(stack.getItem());
-        if (!PolymerPackAssetGuard.hasItemDefinition(itemId)) {
+        if (hasMainPack && !PolymerPackAssetGuard.hasItemDefinition(itemId)) {
             return null;
         }
         return itemId;

@@ -72,6 +72,7 @@ public class RepeaterCrossbowItem extends CrossbowItem implements PolymerFallbac
         ProjectileEntity projectile = super.createArrowEntity(world, shooter, weaponStack, projectileStack, critical);
         if (projectile instanceof PersistentProjectileEntity persistentProjectile) {
             persistentProjectile.setDamage(BASE_ARROW_DAMAGE);
+            RepeaterManager.markRepeaterArrow(persistentProjectile);
         }
         return projectile;
     }

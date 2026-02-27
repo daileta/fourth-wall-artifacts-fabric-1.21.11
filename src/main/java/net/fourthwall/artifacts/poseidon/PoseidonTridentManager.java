@@ -15,6 +15,8 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.TridentEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
@@ -138,6 +140,8 @@ public final class PoseidonTridentManager {
     }
 
     private static void onAfterDamage(LivingEntity entity, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
+        spawnPoseidonHitParticles(entity, source, damageTaken, blocked);
+
         if (retaliationDepth > 0 || blocked || damageTaken <= 0.0F) {
             return;
         }
@@ -161,6 +165,38 @@ public final class PoseidonTridentManager {
         } finally {
             retaliationDepth--;
         }
+    }
+
+    private static void spawnPoseidonHitParticles(LivingEntity target, DamageSource source, float damageTaken, boolean blocked) {
+        if (blocked || damageTaken <= 0.0F || !ArtifactsConfigManager.get().tridentOfPoseidon.enableParticles) {
+            return;
+        }
+        if (!(target.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        boolean poseidonStrike = false;
+        ItemStack weapon = source.getWeaponStack();
+        if (weapon != null && weapon.isOf(ModItems.TRIDENT_OF_POSEIDON)) {
+            poseidonStrike = true;
+            if (source.getAttacker() instanceof ServerPlayerEntity attacker && CHANNELING_PLAYERS.contains(attacker.getUuid())) {
+                poseidonStrike = false;
+            }
+        }
+
+        if (source.getSource() instanceof TridentEntity trident && trident.getWeaponStack().isOf(ModItems.TRIDENT_OF_POSEIDON)) {
+            poseidonStrike = true;
+        }
+
+        if (!poseidonStrike) {
+            return;
+        }
+
+        double x = target.getX();
+        double y = target.getBodyY(0.55D);
+        double z = target.getZ();
+        world.spawnParticles(ParticleTypes.SCULK_CHARGE_POP, x, y, z, 18, 0.45D, 0.35D, 0.45D, 0.025D);
+        world.spawnParticles(ParticleTypes.BUBBLE_POP, x, y, z, 16, 0.45D, 0.35D, 0.45D, 0.02D);
     }
 
     private static void applyHoldingBuffs(ServerPlayerEntity player) {

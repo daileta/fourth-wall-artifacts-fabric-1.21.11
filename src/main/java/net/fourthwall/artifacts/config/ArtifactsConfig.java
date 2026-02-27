@@ -20,6 +20,9 @@ public final class ArtifactsConfig {
     public RepeaterSection repeater = new RepeaterSection();
     public BloodSacrificeSection bloodSacrifice = new BloodSacrificeSection();
     public BeaconCoreSection beaconCore = new BeaconCoreSection();
+    public EarthsplitterSection earthsplitter = new EarthsplitterSection();
+    public EmperorsCrownSection emperorsCrown = new EmperorsCrownSection();
+    public VoidReaverSection voidReaver = new VoidReaverSection();
     public TridentOfPoseidonSection tridentOfPoseidon = new TridentOfPoseidonSection();
     public LionsHeartChestplateSection lionsHeartChestplate = new LionsHeartChestplateSection();
     public ArtifactEnchantSection artifactEnchants = new ArtifactEnchantSection();
@@ -43,6 +46,15 @@ public final class ArtifactsConfig {
         if (beaconCore == null) {
             beaconCore = new BeaconCoreSection();
         }
+        if (earthsplitter == null) {
+            earthsplitter = new EarthsplitterSection();
+        }
+        if (emperorsCrown == null) {
+            emperorsCrown = new EmperorsCrownSection();
+        }
+        if (voidReaver == null) {
+            voidReaver = new VoidReaverSection();
+        }
         if (tridentOfPoseidon == null) {
             tridentOfPoseidon = new TridentOfPoseidonSection();
         }
@@ -59,6 +71,9 @@ public final class ArtifactsConfig {
         repeater.sanitize();
         bloodSacrifice.sanitize();
         beaconCore.sanitize();
+        earthsplitter.sanitize();
+        emperorsCrown.sanitize();
+        voidReaver.sanitize();
         tridentOfPoseidon.sanitize();
         lionsHeartChestplate.sanitize();
         artifactEnchants.sanitize();
@@ -77,6 +92,9 @@ public final class ArtifactsConfig {
         root.add("repeater", buildRepeaterJson(this.repeater, defaults.repeater));
         root.add("bloodSacrifice", buildBloodSacrificeJson(this.bloodSacrifice, defaults.bloodSacrifice));
         root.add("beaconCore", buildBeaconCoreJson(this.beaconCore, defaults.beaconCore));
+        root.add("earthsplitter", buildEarthsplitterJson(this.earthsplitter, defaults.earthsplitter));
+        root.add("emperorsCrown", buildEmperorsCrownJson(this.emperorsCrown, defaults.emperorsCrown));
+        root.add("voidReaver", buildVoidReaverJson(this.voidReaver, defaults.voidReaver));
         root.add("tridentOfPoseidon", buildTridentJson(this.tridentOfPoseidon, defaults.tridentOfPoseidon));
         root.add("lionHeartChestplate", buildLionHeartJson(this.lionsHeartChestplate, defaults.lionsHeartChestplate));
         root.add("artifactEnchants", buildArtifactEnchantsJson(this.artifactEnchants, defaults.artifactEnchants));
@@ -99,6 +117,7 @@ public final class ArtifactsConfig {
         addDoc(obj, "silverfishAuraRadius", current.silverfishAuraRadius, defaults.silverfishAuraRadius);
         addDoc(obj, "spawnGuaranteedInfestedChance", current.spawnGuaranteedInfestedChance, defaults.spawnGuaranteedInfestedChance);
         addDoc(obj, "enableTargetingCommand", current.enableTargetingCommand, defaults.enableTargetingCommand);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
         obj.addProperty("spawnGuaranteedInfestedChance_note", "0.0 to 1.0 chance for silverfish spawned by Guaranteed Infested to receive the effect.");
         return obj;
     }
@@ -112,6 +131,7 @@ public final class ArtifactsConfig {
     private static JsonObject buildRepeaterJson(RepeaterSection current, RepeaterSection defaults) {
         JsonObject obj = new JsonObject();
         addDoc(obj, "postFiringCooldownTicks", current.postFiringCooldownTicks, defaults.postFiringCooldownTicks);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
         return obj;
     }
 
@@ -159,6 +179,25 @@ public final class ArtifactsConfig {
     private static JsonObject buildBeaconCoreJson(BeaconCoreSection current, BeaconCoreSection defaults) {
         JsonObject obj = new JsonObject();
         addDoc(obj, "anchorProtectionRadius", current.anchorProtectionRadius, defaults.anchorProtectionRadius);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        return obj;
+    }
+
+    private static JsonObject buildEarthsplitterJson(EarthsplitterSection current, EarthsplitterSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        return obj;
+    }
+
+    private static JsonObject buildEmperorsCrownJson(EmperorsCrownSection current, EmperorsCrownSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        return obj;
+    }
+
+    private static JsonObject buildVoidReaverJson(VoidReaverSection current, VoidReaverSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
         return obj;
     }
 
@@ -171,6 +210,7 @@ public final class ArtifactsConfig {
         addDoc(obj, "allowBeamInRain", current.allowBeamInRain, defaults.allowBeamInRain);
         addDoc(obj, "beamCooldownTicks", current.beamCooldownTicks, defaults.beamCooldownTicks);
         addDoc(obj, "holdingEffects", current.holdingEffects, defaults.holdingEffects);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
         obj.addProperty("beamMovementSpeedMultiplierWhileChanneling_note", "0.0 = immobile while channeling (current default). 1.0 = normal speed.");
         return obj;
     }
@@ -193,6 +233,7 @@ public final class ArtifactsConfig {
         addDoc(obj, "maxHealthIncrease", current.maxHealthIncrease, defaults.maxHealthIncrease);
         addDoc(obj, "armorLevel", current.armorLevel, defaults.armorLevel);
         addDoc(obj, "armorToughness", current.armorToughness, defaults.armorToughness);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
         obj.addProperty("interactionRange_note", "These are raw attribute modifier amounts using ADD_MULTIPLIED_TOTAL (2.0 = +200% range).");
         return obj;
     }
@@ -373,6 +414,7 @@ public final class ArtifactsConfig {
         public int silverfishAuraRadius = 6;
         public float spawnGuaranteedInfestedChance = 0.0F;
         public boolean enableTargetingCommand = true;
+        public boolean enableParticles = true;
 
         private void sanitize() {
             if (silverfishAuraBuffs == null) {
@@ -393,6 +435,7 @@ public final class ArtifactsConfig {
 
     public static final class RepeaterSection {
         public int postFiringCooldownTicks = 0;
+        public boolean enableParticles = true;
 
         private void sanitize() {
             postFiringCooldownTicks = nonNegative(postFiringCooldownTicks);
@@ -496,9 +539,31 @@ public final class ArtifactsConfig {
 
     public static final class BeaconCoreSection {
         public double anchorProtectionRadius = 75.0D;
+        public boolean enableParticles = true;
 
         private void sanitize() {
             anchorProtectionRadius = nonNegative(anchorProtectionRadius);
+        }
+    }
+
+    public static final class EarthsplitterSection {
+        public boolean enableParticles = true;
+
+        private void sanitize() {
+        }
+    }
+
+    public static final class EmperorsCrownSection {
+        public boolean enableParticles = true;
+
+        private void sanitize() {
+        }
+    }
+
+    public static final class VoidReaverSection {
+        public boolean enableParticles = true;
+
+        private void sanitize() {
         }
     }
 
@@ -509,6 +574,7 @@ public final class ArtifactsConfig {
         public double beamMovementSpeedMultiplierWhileChanneling = 0.0D;
         public boolean allowBeamInRain = true;
         public int beamCooldownTicks = 300;
+        public boolean enableParticles = true;
         public List<StatusEffectEntry> holdingEffects = new ArrayList<>(List.of(
                 new StatusEffectEntry("minecraft:dolphins_grace", 10, 0),
                 new StatusEffectEntry("minecraft:night_vision", 220, 0),
@@ -537,6 +603,7 @@ public final class ArtifactsConfig {
         public double maxHealthIncrease = 80.0D;
         public int armorLevel = 15;
         public float armorToughness = 5.0F;
+        public boolean enableParticles = true;
 
         private void sanitize() {
             if (enchants == null) {

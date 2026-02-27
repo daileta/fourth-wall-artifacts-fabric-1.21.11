@@ -22,6 +22,7 @@ import net.minecraft.entity.mob.SilverfishEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -84,6 +85,7 @@ public final class InfestedArtifactManager {
 
         applyRefreshedGuaranteedInfested(entity, HIT_EFFECT_DURATION_TICKS);
         attacker.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GUARANTEED_INFESTED, SELF_EFFECT_DURATION_TICKS, 0, true, false));
+        emitInfestedSwordHitParticles(entity);
 
         if (entity != attacker && ArtifactsConfigManager.get().infestedSword.enableTargetingCommand) {
             UUID ownerId = attacker.getUuid();
@@ -329,6 +331,17 @@ public final class InfestedArtifactManager {
     private static void clearOwner(UUID ownerId) {
         COMMAND_TARGETS.remove(ownerId);
         NOT_HOLDING_SWORD_TICKS.remove(ownerId);
+    }
+
+    private static void emitInfestedSwordHitParticles(LivingEntity target) {
+        if (!ArtifactsConfigManager.get().infestedSword.enableParticles || !(target.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+        double x = target.getX();
+        double y = target.getBodyY(0.55D);
+        double z = target.getZ();
+        world.spawnParticles(ParticleTypes.INFESTED, x, y, z, 18, 0.4D, 0.28D, 0.4D, 0.015D);
+        world.spawnParticles(ParticleTypes.RAID_OMEN, x, y, z, 12, 0.4D, 0.28D, 0.4D, 0.01D);
     }
 
     private static void applyConfiguredEffects(LivingEntity entity, List<ResolvedStatusEffect> effects) {

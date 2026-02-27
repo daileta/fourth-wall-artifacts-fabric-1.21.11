@@ -27,6 +27,7 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -57,6 +58,7 @@ public final class BeaconCoreManager {
     private static final double RESPAWN_ANCHOR_MATCH_RADIUS_SQUARED = 9.0D;
     private static final double END_CRYSTAL_MATCH_RADIUS_SQUARED = 4.0D;
     private static final int HAZARD_BLOCK_CHECK_RADIUS = 1;
+    private static final long BEACON_PARTICLE_INTERVAL_TICKS = 8L;
     private static final String STATE_KEY = "evanpack_beacon_core_anchor";
     private static final PersistentStateType<BeaconAnchorPersistentState> PERSISTENT_STATE_TYPE =
             new PersistentStateType<>(STATE_KEY, BeaconAnchorPersistentState::new, BeaconAnchorPersistentState.CODEC, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
@@ -130,6 +132,9 @@ public final class BeaconCoreManager {
         pruneExpiredEntries(tick);
         if (tick % 40L == 0L) {
             pruneInvalidBlockHazards(server);
+        }
+        if (tick % BEACON_PARTICLE_INTERVAL_TICKS == 0L && ArtifactsConfigManager.get().beaconCore.enableParticles) {
+            emitHeldCoreParticles(server);
         }
     }
 
@@ -467,6 +472,22 @@ public final class BeaconCoreManager {
                     }
                 }
             }
+        }
+    }
+
+    private static void emitHeldCoreParticles(MinecraftServer server) {
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            if (!isBeaconCoreProtected(player)) {
+                continue;
+            }
+
+            ServerWorld world = (ServerWorld) player.getEntityWorld();
+            double x = player.getX();
+            double y = player.getBodyY(0.6D);
+            double z = player.getZ();
+
+            world.spawnParticles(ParticleTypes.ENCHANT, x, y, z, 8, 5.0D, 1.0D, 5.0D, 0.012D);
+            world.spawnParticles(ParticleTypes.HAPPY_VILLAGER, x, y, z, 5, 5.0D, 0.8D, 5.0D, 0.015D);
         }
     }
 

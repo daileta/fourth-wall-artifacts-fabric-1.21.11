@@ -9,7 +9,9 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fourthwall.artifacts.earthsplitter.EarthsplitterManager;
 import net.fourthwall.artifacts.infested.InfestedArtifactManager;
+import net.fourthwall.artifacts.particle.WearerParticleManager;
 import net.fourthwall.artifacts.poseidon.PoseidonTridentManager;
 import net.fourthwall.artifacts.repeater.RepeaterManager;
 import net.fourthwall.artifacts.registry.ModBlocks;
@@ -60,6 +62,8 @@ public class FourthWallArtifacts implements ModInitializer {
         PoseidonTridentManager.init();
         RepeaterManager.init();
         BeaconCoreManager.init();
+        EarthsplitterManager.init();
+        WearerParticleManager.init();
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             LOGGER.info("Artifacts server-start diagnostics: items={}, blocks={}, groups={}",

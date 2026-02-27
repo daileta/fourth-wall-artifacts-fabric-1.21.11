@@ -1,8 +1,11 @@
 package net.fourthwall.artifacts.voidreaver;
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.particle.DragonBreathParticleEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
@@ -22,6 +25,7 @@ public final class VoidReaverAuraManager {
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(VoidReaverAuraManager::onEndServerTick);
+        ServerLivingEntityEvents.AFTER_DAMAGE.register(VoidReaverAuraManager::onAfterDamage);
     }
 
     private static void onEndServerTick(MinecraftServer server) {
@@ -30,9 +34,27 @@ public final class VoidReaverAuraManager {
                 continue;
             }
 
-            emitVoidReaverParticles(holder);
+            if (ArtifactsConfigManager.get().voidReaver.enableParticles) {
+                emitVoidReaverParticles(holder);
+            }
             erasePositiveEffectsAround(holder);
         }
+    }
+
+    private static void onAfterDamage(LivingEntity target, DamageSource source, float baseDamageTaken, float damageTaken, boolean blocked) {
+        if (blocked || damageTaken <= 0.0F || !ArtifactsConfigManager.get().voidReaver.enableParticles) {
+            return;
+        }
+        var weapon = source.getWeaponStack();
+        if (weapon == null || !weapon.isOf(ModItems.VOID_REAVER) || !(target.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        double x = target.getX();
+        double y = target.getBodyY(0.55D);
+        double z = target.getZ();
+        world.spawnParticles(ParticleTypes.PORTAL, x, y, z, 18, 0.4D, 0.3D, 0.4D, 0.08D);
+        world.spawnParticles(ParticleTypes.TRIAL_OMEN, x, y, z, 14, 0.4D, 0.3D, 0.4D, 0.01D);
     }
 
     private static boolean isHoldingVoidReaver(PlayerEntity player) {
