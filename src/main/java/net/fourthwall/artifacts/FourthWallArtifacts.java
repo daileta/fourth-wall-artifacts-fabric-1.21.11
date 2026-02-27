@@ -19,6 +19,7 @@ import net.fourthwall.artifacts.registry.ModItemGroups;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.fourthwall.artifacts.registry.ModStatusEffects;
 import net.fourthwall.artifacts.smoldering.SmolderingRodManager;
+import net.fourthwall.artifacts.undead.UndeadWardArmyManager;
 import net.fourthwall.artifacts.voidreaver.VoidReaverAuraManager;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
@@ -63,6 +64,7 @@ public class FourthWallArtifacts implements ModInitializer {
         RepeaterManager.init();
         BeaconCoreManager.init();
         EarthsplitterManager.init();
+        UndeadWardArmyManager.init();
         WearerParticleManager.init();
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {

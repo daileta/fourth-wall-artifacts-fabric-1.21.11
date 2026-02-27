@@ -14,6 +14,7 @@ import net.fourthwall.artifacts.item.RepeaterCrossbowItem;
 import net.fourthwall.artifacts.item.ExcaliburItem;
 import net.fourthwall.artifacts.item.SmolderingRodItem;
 import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
+import net.fourthwall.artifacts.item.UndeadWardArmyItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
@@ -39,6 +40,10 @@ public final class ModItems {
     public static final Item BLOOD_SACRIFICE = register(
             "blood_sacrifice",
             new BloodSacrificeItem(withItemSettings("blood_sacrifice").maxCount(1))
+    );
+    public static final Item UNDEAD_WARD_ARMY = register(
+            "undead_ward_army",
+            new UndeadWardArmyItem(withItemSettings("undead_ward_army").maxCount(1))
     );
     public static final Item VOID_REAVER = register(
             "void_reaver",

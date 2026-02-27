@@ -8,6 +8,7 @@ import net.fourthwall.artifacts.blood.BloodSacrificeManager;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.fourthwall.artifacts.infested.InfestedArtifactManager;
 import net.fourthwall.artifacts.poseidon.PoseidonTridentManager;
+import net.fourthwall.artifacts.undead.UndeadWardArmyManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -26,7 +27,14 @@ public final class ArtifactsCommands {
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher, net.minecraft.command.CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(literal("artifacts")
                 .then(literal("reload_config")
-                        .executes(context -> reloadConfig(context.getSource()))));
+                        .executes(context -> reloadConfig(context.getSource())))
+                .then(literal("undead_ward_army")
+                        .then(literal("summon_deputies").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.SUMMON_DEPUTIES)))
+                        .then(literal("dismiss_deputies").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.DISMISS_DEPUTIES)))
+                        .then(literal("summon_commanders").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.SUMMON_COMMANDERS)))
+                        .then(literal("dismiss_commanders").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.DISMISS_COMMANDERS)))
+                        .then(literal("summon_warden").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.SUMMON_WARDEN)))
+                        .then(literal("dismiss_warden").executes(context -> executeWardArmyCommand(context.getSource(), WardArmyAction.DISMISS_WARDEN)))));
     }
 
     private static int reloadConfig(ServerCommandSource source) {
@@ -40,6 +48,7 @@ public final class ArtifactsCommands {
         InfestedArtifactManager.reloadConfig();
         PoseidonTridentManager.reloadConfig(server);
         BloodSacrificeManager.reloadConfig(server);
+        UndeadWardArmyManager.reloadConfig(server);
 
         ArtifactReloadApplier.ReloadSummary summary = ArtifactReloadApplier.applyToLoadedWorld(server);
 
@@ -58,6 +67,25 @@ public final class ArtifactsCommands {
         return summary.refreshedStacks();
     }
 
+    private static int executeWardArmyCommand(ServerCommandSource source, WardArmyAction action) {
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow();
+        } catch (CommandSyntaxException exception) {
+            source.sendError(Text.literal("This command can only be used by a player."));
+            return 0;
+        }
+
+        return switch (action) {
+            case SUMMON_DEPUTIES -> UndeadWardArmyManager.summonDeputies(player);
+            case DISMISS_DEPUTIES -> UndeadWardArmyManager.dismissDeputies(player);
+            case SUMMON_COMMANDERS -> UndeadWardArmyManager.summonCommanders(player);
+            case DISMISS_COMMANDERS -> UndeadWardArmyManager.dismissCommanders(player);
+            case SUMMON_WARDEN -> UndeadWardArmyManager.summonWarden(player);
+            case DISMISS_WARDEN -> UndeadWardArmyManager.dismissWarden(player);
+        };
+    }
+
     private static boolean hasReloadPermission(ServerCommandSource source) {
         try {
             var player = source.getPlayerOrThrow();
@@ -65,5 +93,14 @@ public final class ArtifactsCommands {
         } catch (CommandSyntaxException exception) {
             return true;
         }
+    }
+
+    private enum WardArmyAction {
+        SUMMON_DEPUTIES,
+        DISMISS_DEPUTIES,
+        SUMMON_COMMANDERS,
+        DISMISS_COMMANDERS,
+        SUMMON_WARDEN,
+        DISMISS_WARDEN
     }
 }

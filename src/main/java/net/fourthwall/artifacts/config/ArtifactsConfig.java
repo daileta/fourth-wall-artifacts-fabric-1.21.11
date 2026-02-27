@@ -19,6 +19,7 @@ public final class ArtifactsConfig {
     public InfestedPickaxeSection infestedPickaxe = new InfestedPickaxeSection();
     public RepeaterSection repeater = new RepeaterSection();
     public BloodSacrificeSection bloodSacrifice = new BloodSacrificeSection();
+    public UndeadWardArmySection undeadWardArmy = new UndeadWardArmySection();
     public BeaconCoreSection beaconCore = new BeaconCoreSection();
     public EarthsplitterSection earthsplitter = new EarthsplitterSection();
     public EmperorsCrownSection emperorsCrown = new EmperorsCrownSection();
@@ -42,6 +43,9 @@ public final class ArtifactsConfig {
         }
         if (bloodSacrifice == null) {
             bloodSacrifice = new BloodSacrificeSection();
+        }
+        if (undeadWardArmy == null) {
+            undeadWardArmy = new UndeadWardArmySection();
         }
         if (beaconCore == null) {
             beaconCore = new BeaconCoreSection();
@@ -70,6 +74,7 @@ public final class ArtifactsConfig {
         infestedPickaxe.sanitize();
         repeater.sanitize();
         bloodSacrifice.sanitize();
+        undeadWardArmy.sanitize();
         beaconCore.sanitize();
         earthsplitter.sanitize();
         emperorsCrown.sanitize();
@@ -91,6 +96,7 @@ public final class ArtifactsConfig {
         root.add("infestedPickaxe", buildInfestedPickaxeJson(this.infestedPickaxe, defaults.infestedPickaxe));
         root.add("repeater", buildRepeaterJson(this.repeater, defaults.repeater));
         root.add("bloodSacrifice", buildBloodSacrificeJson(this.bloodSacrifice, defaults.bloodSacrifice));
+        root.add("undeadWardArmy", buildUndeadWardArmyJson(this.undeadWardArmy, defaults.undeadWardArmy));
         root.add("beaconCore", buildBeaconCoreJson(this.beaconCore, defaults.beaconCore));
         root.add("earthsplitter", buildEarthsplitterJson(this.earthsplitter, defaults.earthsplitter));
         root.add("emperorsCrown", buildEmperorsCrownJson(this.emperorsCrown, defaults.emperorsCrown));
@@ -173,6 +179,69 @@ public final class ArtifactsConfig {
         summon.add("enchantLevels", enchantLevels);
 
         obj.add("summon", summon);
+        return obj;
+    }
+
+    private static JsonObject buildUndeadWardArmyJson(UndeadWardArmySection current, UndeadWardArmySection defaults) {
+        JsonObject obj = new JsonObject();
+        obj.add("deputies", buildUndeadDeputiesJson(current.deputies, defaults.deputies));
+        obj.add("commanders", buildUndeadCommandersJson(current.commanders, defaults.commanders));
+        obj.add("warden", buildUndeadWardenJson(current.warden, defaults.warden));
+        return obj;
+    }
+
+    private static JsonObject buildUndeadDeputiesJson(UndeadDeputySection current, UndeadDeputySection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "summonCount", current.summonCount, defaults.summonCount);
+        addDoc(obj, "summonCooldownTicks", current.summonCooldownTicks, defaults.summonCooldownTicks);
+        addDoc(obj, "lifespanTicks", current.lifespanTicks, defaults.lifespanTicks);
+        addDoc(obj, "summonRadius", current.summonRadius, defaults.summonRadius);
+        addDoc(obj, "aggroRadius", current.aggroRadius, defaults.aggroRadius);
+        addDoc(obj, "swordAttackDamage", current.swordAttackDamage, defaults.swordAttackDamage);
+        addDoc(obj, "enableSummonParticles", current.enableSummonParticles, defaults.enableSummonParticles);
+        addDoc(obj, "enableHitParticles", current.enableHitParticles, defaults.enableHitParticles);
+        obj.add("armor", buildUndeadArmorProfileJson(current.armor, defaults.armor));
+        return obj;
+    }
+
+    private static JsonObject buildUndeadCommandersJson(UndeadCommanderSection current, UndeadCommanderSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "summonCount", current.summonCount, defaults.summonCount);
+        addDoc(obj, "summonCooldownTicks", current.summonCooldownTicks, defaults.summonCooldownTicks);
+        addDoc(obj, "lifespanTicks", current.lifespanTicks, defaults.lifespanTicks);
+        addDoc(obj, "summonRadius", current.summonRadius, defaults.summonRadius);
+        addDoc(obj, "aggroRadius", current.aggroRadius, defaults.aggroRadius);
+        addDoc(obj, "enableSummonParticles", current.enableSummonParticles, defaults.enableSummonParticles);
+        addDoc(obj, "enableHitParticles", current.enableHitParticles, defaults.enableHitParticles);
+        addDoc(obj, "arrowHitEffects", current.arrowHitEffects, defaults.arrowHitEffects);
+        obj.addProperty("arrowHitEffects_note", "Status effects applied by commander arrows. Amplifier is zero-based (1 = level II).");
+        obj.add("armor", buildUndeadArmorProfileJson(current.armor, defaults.armor));
+        return obj;
+    }
+
+    private static JsonObject buildUndeadWardenJson(UndeadWardenSection current, UndeadWardenSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "summonCount", current.summonCount, defaults.summonCount);
+        addDoc(obj, "summonCooldownTicks", current.summonCooldownTicks, defaults.summonCooldownTicks);
+        addDoc(obj, "lifespanTicks", current.lifespanTicks, defaults.lifespanTicks);
+        addDoc(obj, "aggroRadius", current.aggroRadius, defaults.aggroRadius);
+        addDoc(obj, "summonForwardDistance", current.summonForwardDistance, defaults.summonForwardDistance);
+        addDoc(obj, "summonSpreadRadius", current.summonSpreadRadius, defaults.summonSpreadRadius);
+        addDoc(obj, "movementSpeed", current.movementSpeed, defaults.movementSpeed);
+        addDoc(obj, "baseAttackDamage", current.baseAttackDamage, defaults.baseAttackDamage);
+        addDoc(obj, "enableSummonParticles", current.enableSummonParticles, defaults.enableSummonParticles);
+        addDoc(obj, "enableHitParticles", current.enableHitParticles, defaults.enableHitParticles);
+        obj.add("armor", buildUndeadArmorProfileJson(current.armor, defaults.armor));
+        return obj;
+    }
+
+    private static JsonObject buildUndeadArmorProfileJson(UndeadArmorProfile current, UndeadArmorProfile defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "helmetArmorPoints", current.helmetArmorPoints, defaults.helmetArmorPoints);
+        addDoc(obj, "chestplateArmorPoints", current.chestplateArmorPoints, defaults.chestplateArmorPoints);
+        addDoc(obj, "leggingsArmorPoints", current.leggingsArmorPoints, defaults.leggingsArmorPoints);
+        addDoc(obj, "bootsArmorPoints", current.bootsArmorPoints, defaults.bootsArmorPoints);
+        addDoc(obj, "armorToughnessPerPiece", current.armorToughnessPerPiece, defaults.armorToughnessPerPiece);
         return obj;
     }
 
@@ -534,6 +603,131 @@ public final class ArtifactsConfig {
             private void sanitize() {
                 sharpness = nonNegative(sharpness);
             }
+        }
+    }
+
+    public static final class UndeadWardArmySection {
+        public UndeadDeputySection deputies = new UndeadDeputySection();
+        public UndeadCommanderSection commanders = new UndeadCommanderSection();
+        public UndeadWardenSection warden = new UndeadWardenSection();
+
+        private void sanitize() {
+            if (deputies == null) {
+                deputies = new UndeadDeputySection();
+            }
+            if (commanders == null) {
+                commanders = new UndeadCommanderSection();
+            }
+            if (warden == null) {
+                warden = new UndeadWardenSection();
+            }
+
+            deputies.sanitize();
+            commanders.sanitize();
+            warden.sanitize();
+        }
+    }
+
+    public static final class UndeadDeputySection {
+        public int summonCount = 10;
+        public int summonCooldownTicks = 90 * 20;
+        public int lifespanTicks = 60 * 20;
+        public double summonRadius = 5.0D;
+        public double aggroRadius = 16.0D;
+        public double swordAttackDamage = 10.0D;
+        public boolean enableSummonParticles = true;
+        public boolean enableHitParticles = true;
+        public UndeadArmorProfile armor = new UndeadArmorProfile();
+
+        private void sanitize() {
+            summonCount = nonNegative(summonCount);
+            summonCooldownTicks = nonNegative(summonCooldownTicks);
+            lifespanTicks = nonNegative(lifespanTicks);
+            summonRadius = nonNegative(summonRadius);
+            aggroRadius = nonNegative(aggroRadius);
+            swordAttackDamage = nonNegative(swordAttackDamage);
+            if (armor == null) {
+                armor = new UndeadArmorProfile();
+            }
+            armor.sanitize();
+        }
+    }
+
+    public static final class UndeadCommanderSection {
+        public int summonCount = 3;
+        public int summonCooldownTicks = 3 * 60 * 20;
+        public int lifespanTicks = 90 * 20;
+        public double summonRadius = 3.0D;
+        public double aggroRadius = 16.0D;
+        public boolean enableSummonParticles = true;
+        public boolean enableHitParticles = true;
+        public UndeadArmorProfile armor = new UndeadArmorProfile();
+        public List<StatusEffectEntry> arrowHitEffects = new ArrayList<>(List.of(
+                new StatusEffectEntry("minecraft:slowness", 80, 1),
+                new StatusEffectEntry("minecraft:blindness", 80, 0),
+                new StatusEffectEntry("minecraft:weakness", 80, 1),
+                new StatusEffectEntry("minecraft:nausea", 80, 1)
+        ));
+
+        private void sanitize() {
+            summonCount = nonNegative(summonCount);
+            summonCooldownTicks = nonNegative(summonCooldownTicks);
+            lifespanTicks = nonNegative(lifespanTicks);
+            summonRadius = nonNegative(summonRadius);
+            aggroRadius = nonNegative(aggroRadius);
+            if (armor == null) {
+                armor = new UndeadArmorProfile();
+            }
+            armor.sanitize();
+            if (arrowHitEffects == null) {
+                arrowHitEffects = new ArrayList<>();
+            }
+            sanitizeEffects(arrowHitEffects);
+        }
+    }
+
+    public static final class UndeadWardenSection {
+        public int summonCount = 1;
+        public int summonCooldownTicks = 10 * 60 * 20;
+        public int lifespanTicks = 3 * 60 * 20;
+        public double aggroRadius = 16.0D;
+        public double summonForwardDistance = 2.5D;
+        public double summonSpreadRadius = 1.0D;
+        public double movementSpeed = 0.50D;
+        public double baseAttackDamage = 12.0D;
+        public boolean enableSummonParticles = true;
+        public boolean enableHitParticles = true;
+        public UndeadArmorProfile armor = new UndeadArmorProfile();
+
+        private void sanitize() {
+            summonCount = nonNegative(summonCount);
+            summonCooldownTicks = nonNegative(summonCooldownTicks);
+            lifespanTicks = nonNegative(lifespanTicks);
+            aggroRadius = nonNegative(aggroRadius);
+            summonForwardDistance = nonNegative(summonForwardDistance);
+            summonSpreadRadius = nonNegative(summonSpreadRadius);
+            movementSpeed = nonNegative(movementSpeed);
+            baseAttackDamage = nonNegative(baseAttackDamage);
+            if (armor == null) {
+                armor = new UndeadArmorProfile();
+            }
+            armor.sanitize();
+        }
+    }
+
+    public static final class UndeadArmorProfile {
+        public int helmetArmorPoints = 5;
+        public int chestplateArmorPoints = 9;
+        public int leggingsArmorPoints = 7;
+        public int bootsArmorPoints = 5;
+        public double armorToughnessPerPiece = 4.0D;
+
+        private void sanitize() {
+            helmetArmorPoints = nonNegative(helmetArmorPoints);
+            chestplateArmorPoints = nonNegative(chestplateArmorPoints);
+            leggingsArmorPoints = nonNegative(leggingsArmorPoints);
+            bootsArmorPoints = nonNegative(bootsArmorPoints);
+            armorToughnessPerPiece = nonNegative(armorToughnessPerPiece);
         }
     }
 
