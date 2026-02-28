@@ -58,13 +58,17 @@ public class UndeadWardArmyItem extends Item implements PolymerFallbackItem {
             return ActionResult.SUCCESS;
         }
 
-        serverPlayer.useBook(createCommandBook(serverPlayer), hand);
+        ItemStack heldStack = user.getStackInHand(hand);
+        if (!heldStack.isOf(this)) {
+            return ActionResult.PASS;
+        }
+
+        applyCommandBookContent(heldStack, serverPlayer);
+        serverPlayer.useBook(heldStack, hand);
         return ActionResult.SUCCESS;
     }
 
-    private static ItemStack createCommandBook(ServerPlayerEntity player) {
-        ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
-
+    private static void applyCommandBookContent(ItemStack stack, ServerPlayerEntity player) {
         Text title = Text.literal("The Undead Ward Army").formatted(Formatting.AQUA, Formatting.BOLD);
         Text pageOne = Text.empty()
                 .append(title)
@@ -84,14 +88,13 @@ public class UndeadWardArmyItem extends Item implements PolymerFallbackItem {
                 .append(Text.literal("\n"))
                 .append(button("Dismiss Undead Warden", "/artifacts undead_ward_army dismiss_warden", Formatting.RED));
 
-        book.set(DataComponentTypes.WRITTEN_BOOK_CONTENT, new WrittenBookContentComponent(
+        stack.set(DataComponentTypes.WRITTEN_BOOK_CONTENT, new WrittenBookContentComponent(
                 RawFilteredPair.of("The Undead Ward Army"),
                 player.getName().getString(),
                 0,
                 List.of(RawFilteredPair.of(pageOne), RawFilteredPair.of(pageTwo)),
                 true
         ));
-        return book;
     }
 
     private static Text button(String label, String command, Formatting color) {
