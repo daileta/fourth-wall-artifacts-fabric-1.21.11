@@ -1,0 +1,8 @@
+{
+  "asset_id": "evanpack:rib",
+  "template_item": "minecraft:gold_ingot",
+  "description": {
+    "translate": "trim_pattern.evanpack.rib"
+  },
+  "decal": false
+}

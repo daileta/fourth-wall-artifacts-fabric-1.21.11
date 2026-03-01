@@ -17,11 +17,18 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.equipment.ArmorMaterial;
 import net.minecraft.item.equipment.ArmorMaterials;
+import net.minecraft.item.equipment.EquipmentAsset;
 import net.minecraft.item.equipment.EquipmentType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Unit;
+import net.minecraft.item.equipment.trim.ArmorTrim;
+import net.minecraft.util.Identifier;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.item.equipment.EquipmentAssetKeys;
+
+
 
 import java.util.EnumMap;
 import java.util.List;
@@ -82,6 +89,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
         boolean changed = false;
+        changed |= ensureTrim(stack, world);
 
         AttributeModifiersComponent desiredAttributes = createCrownAttributeModifiers(createCrownMaterial());
         AttributeModifiersComponent currentAttributes = stack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
@@ -158,7 +166,8 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                 gold.toughness(),
                 gold.knockbackResistance(),
                 gold.repairIngredient(),
-                gold.assetId()
+                RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("emperors_crown"))
+
         );
     }
 
@@ -217,5 +226,28 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                 Text.literal("to the previous Empress of Alexandria, Anastasia,"),
                 Text.literal("after her father's death")
         ));
+    }
+
+    private static boolean ensureTrim(ItemStack stack, ServerWorld world) {
+        var patterns = world.getRegistryManager().getOrThrow(RegistryKeys.TRIM_PATTERN);
+        var materials = world.getRegistryManager().getOrThrow(RegistryKeys.TRIM_MATERIAL);
+
+        var patternKey = net.minecraft.registry.RegistryKey.of(RegistryKeys.TRIM_PATTERN, Identifier.of("evanpack", "rib"));
+        var materialKey = net.minecraft.registry.RegistryKey.of(RegistryKeys.TRIM_MATERIAL, Identifier.of("minecraft", "gold"));
+
+        var patternEntry = patterns.getOptional(patternKey);
+        var materialEntry = materials.getOptional(materialKey);
+
+        if (patternEntry.isEmpty() || materialEntry.isEmpty()) {
+            return false;
+        }
+
+        var trim = new ArmorTrim(materialEntry.get(), patternEntry.get());
+        var current = stack.get(DataComponentTypes.TRIM);
+        if (!trim.equals(current)) {
+            stack.set(DataComponentTypes.TRIM, trim);
+            return true;
+        }
+        return false;
     }
 }

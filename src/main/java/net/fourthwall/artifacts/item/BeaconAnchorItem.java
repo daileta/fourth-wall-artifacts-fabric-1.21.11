@@ -40,4 +40,15 @@ public class BeaconAnchorItem extends BlockItem implements PolymerFallbackItem {
         textConsumer.accept(Text.translatable("item.evanpack.beacon_anchor.desc.line2"));
         textConsumer.accept(Text.translatable("item.evanpack.beacon_anchor.desc.line3"));
     }
+
+    @Override
+    public Text getName(ItemStack stack) {
+        return Text.empty()
+            .append(Text.literal("B").styled(s -> s.withColor(0xF9B6DC).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xE8BDE8).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0xD6C3F3).withBold(true)))
+            .append(Text.literal("c").styled(s -> s.withColor(0xCCB4F3).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xC2A4F2).withBold(true)))
+            .append(Text.literal("n").styled(s -> s.withColor(0x7CB1FB).withBold(true)));
+    }
 }

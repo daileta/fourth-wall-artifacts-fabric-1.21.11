@@ -21,5 +21,7 @@
   "item.evanpack.beacon_anchor.desc.line2": "It is invisible and invincible and you can walk through it.",
   "item.evanpack.beacon_anchor.desc.line3": "Only when there is a new user of the core can a new one be placed.",
   "effect.evanpack.guaranteed_infested": "Guaranteed Infestation",
-  "itemGroup.evanpack.artifacts": "Fourth Wall Artifacts"
+  "itemGroup.evanpack.artifacts": "Fourth Wall Artifacts",
+  "trim_pattern.evanpack.rib": "Rib Armor Trim"
+
 }

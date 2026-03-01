@@ -18,16 +18,15 @@ public class BeaconCoreItem extends Item implements PolymerFallbackItem {
     @Override
     public Text getName(ItemStack stack) {
         return Text.empty()
-            .append(Text.literal("B").styled(s -> s.withColor(0x47BCFF).withBold(true)))
-            .append(Text.literal("e").styled(s -> s.withColor(0x6CC9FF).withBold(true)))
-            .append(Text.literal("a").styled(s -> s.withColor(0x91D7FF).withBold(true)))
-            .append(Text.literal("c").styled(s -> s.withColor(0xB5E4FF).withBold(true)))
-            .append(Text.literal("o").styled(s -> s.withColor(0xDAF2FF).withBold(true)))
-            .append(Text.literal("n").styled(s -> s.withColor(0xFFFFFF).withBold(true)))
-            .append(Text.literal(" ").styled(s -> s.withColor(0xFFFFFF).withBold(true)))
-            .append(Text.literal("C").styled(s -> s.withColor(0xFFFDDC).withBold(true)))
-            .append(Text.literal("o").styled(s -> s.withColor(0xFFFABA).withBold(true)))
-            .append(Text.literal("r").styled(s -> s.withColor(0xFFF897).withBold(true)))
-            .append(Text.literal("e").styled(s -> s.withColor(0xFFF352).withBold(true)));
+            .append(Text.literal("B").styled(s -> s.withColor(0xF9B6DC).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0xEFBAE3).withBold(true)))
+            .append(Text.literal("a").styled(s -> s.withColor(0xE4BEEA).withBold(true)))
+            .append(Text.literal("c").styled(s -> s.withColor(0xDAC2F1).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xD2BDF3).withBold(true)))
+            .append(Text.literal("n ").styled(s -> s.withColor(0xCCB4F3).withBold(true)))
+            .append(Text.literal("C").styled(s -> s.withColor(0xC6AAF2).withBold(true)))
+            .append(Text.literal("o").styled(s -> s.withColor(0xBBA5F3).withBold(true)))
+            .append(Text.literal("r").styled(s -> s.withColor(0xA6A9F6).withBold(true)))
+            .append(Text.literal("e").styled(s -> s.withColor(0x7CB1FB).withBold(true)));
     }
 }
