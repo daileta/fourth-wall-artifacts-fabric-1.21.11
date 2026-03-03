@@ -14,7 +14,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-
 import java.util.List;
 
 public class UndeadWardArmyItem extends Item implements PolymerFallbackItem {

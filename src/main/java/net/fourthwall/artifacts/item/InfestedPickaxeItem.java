@@ -11,13 +11,18 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.Objects;
+import java.util.List;
 
 
 public class InfestedPickaxeItem extends Item implements PolymerFallbackItem {
     private static final float BASE_MINING_SPEED = 26.0F;
 
     public InfestedPickaxeItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -65,7 +70,27 @@ public class InfestedPickaxeItem extends Item implements PolymerFallbackItem {
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+    return new LoreComponent(List.of(
+        Text.translatable("A tool that clicks faintly against stone, as if the walls beckon to the sound.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+        Text.translatable("Only corruption patient enough to bury its own champion could have birthed this.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {

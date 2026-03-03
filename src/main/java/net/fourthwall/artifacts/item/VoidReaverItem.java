@@ -13,7 +13,6 @@ import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-
 import java.util.function.Consumer;
 
 public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {

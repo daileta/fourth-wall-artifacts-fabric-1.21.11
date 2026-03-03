@@ -17,7 +17,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.equipment.ArmorMaterial;
 import net.minecraft.item.equipment.ArmorMaterials;
-import net.minecraft.item.equipment.EquipmentAsset;
 import net.minecraft.item.equipment.EquipmentType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
@@ -27,12 +26,9 @@ import net.minecraft.item.equipment.trim.ArmorTrim;
 import net.minecraft.util.Identifier;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.item.equipment.EquipmentAssetKeys;
-
-
-
+import java.util.Objects;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Objects;
 
 public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
     private static final int PROTECTION_LEVEL = 4;
@@ -43,7 +39,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
     private static final String CUSTOM_MODEL_TAG = "Alexandria's Artifact";
 
     public EmperorsCrownItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     public static Item.Settings applyHelmetSettings(Item.Settings settings) {

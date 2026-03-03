@@ -11,15 +11,29 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.List;
 
 public class BloodSacrificeItem extends Item implements PolymerFallbackItem {
     public BloodSacrificeItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
     public Item getFallbackItem(ItemStack stack) {
         return Items.STICK;
+    }
+
+    private static LoreComponent createLore() {
+    return new LoreComponent(List.of(
+        Text.translatable("A dagger that lights with a soul flame that can’t be extinguished.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+        Text.translatable("It begs for an equal exchange of life with blood and rewards those who give it.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     @Override

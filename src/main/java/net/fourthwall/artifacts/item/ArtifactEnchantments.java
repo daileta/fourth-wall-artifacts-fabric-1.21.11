@@ -12,7 +12,6 @@ import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 

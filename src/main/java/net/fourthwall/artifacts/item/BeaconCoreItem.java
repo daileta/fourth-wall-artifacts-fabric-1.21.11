@@ -4,15 +4,29 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.List;
 
 public class BeaconCoreItem extends Item implements PolymerFallbackItem {
     public BeaconCoreItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
     public Item getFallbackItem(ItemStack stack) {
         return Items.NETHER_STAR;
+    }
+
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("A crystal core that hums with heavenly tune, bending life itself within its unseen radius.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Only a man who gambled with the wrong gods would dare claim this as a blessing.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     @Override

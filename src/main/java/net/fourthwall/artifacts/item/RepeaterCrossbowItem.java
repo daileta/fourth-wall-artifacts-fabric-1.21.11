@@ -17,13 +17,18 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.Objects;
+import java.util.List;
 
 public class RepeaterCrossbowItem extends CrossbowItem implements PolymerFallbackItem {
     private static final double BASE_ARROW_DAMAGE = 6.0D;
     private static final float PROJECTILE_SPEED_MULTIPLIER = 1.15F;
 
     public RepeaterCrossbowItem(Item.Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -86,10 +91,30 @@ public class RepeaterCrossbowItem extends CrossbowItem implements PolymerFallbac
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
         return ArtifactEnchantments.refreshConfiguredStack(stack, world);
     }
+
+    private static LoreComponent createLore() {
+    return new LoreComponent(List.of(
+        Text.translatable("A modified crossbow that rattles like a storm barely restrained by wood and brass.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+        Text.translatable("Only a stubborn man would try to make the past outrun the future.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+    ));
+}
 }

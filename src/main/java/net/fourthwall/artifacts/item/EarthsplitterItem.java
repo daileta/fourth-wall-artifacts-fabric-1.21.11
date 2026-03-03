@@ -15,6 +15,11 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.text.Text;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.Objects;
+import java.util.List;
 
 public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
     private static final int DENSITY_LEVEL = 5;
@@ -22,7 +27,7 @@ public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
     private static final int UNBREAKING_LEVEL = 5;
 
     public EarthsplitterItem(Item.Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -62,7 +67,27 @@ public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+    return new LoreComponent(List.of(
+        Text.translatable("It is said that a mace fell down from the heavens themselves to our earth.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+        Text.translatable("When it landed, it split the earth itself and helped shaped this world.")
+            .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {

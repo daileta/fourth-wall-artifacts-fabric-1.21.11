@@ -2,21 +2,21 @@ package net.fourthwall.artifacts.item;
 
 import net.fourthwall.artifacts.beacon.BeaconCoreManager;
 import net.minecraft.block.Block;
-import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-
-import java.util.function.Consumer;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
+import net.minecraft.util.Formatting;
+import java.util.List;
 
 public class BeaconAnchorItem extends BlockItem implements PolymerFallbackItem {
     public BeaconAnchorItem(Block block, Settings settings) {
-        super(block, settings);
+        super(block, settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -33,12 +33,17 @@ public class BeaconAnchorItem extends BlockItem implements PolymerFallbackItem {
         return result;
     }
 
-    @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
-        super.appendTooltip(stack, context, displayComponent, textConsumer, type);
-        textConsumer.accept(Text.translatable("item.evanpack.beacon_anchor.desc.line1"));
-        textConsumer.accept(Text.translatable("item.evanpack.beacon_anchor.desc.line2"));
-        textConsumer.accept(Text.translatable("item.evanpack.beacon_anchor.desc.line3"));
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("Place this down where you would like your anchor to be.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("It is invisible and invincible and you can walk through it.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Only when there is a new user of the core can a new one be placed.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     @Override
