@@ -1,8 +1,8 @@
 package net.fourthwall.artifacts.item;
 
+import net.fourthwall.artifacts.config.ArtifactsConfig;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.component.type.AttributeModifiersComponent;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -10,7 +10,6 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.text.Text;
@@ -21,12 +20,8 @@ import java.util.Objects;
 import java.util.List;
 
 public class ExcaliburItem extends Item implements PolymerFallbackItem {
-    private static final int SHARPNESS_LEVEL = 10;
-    private static final int BREACH_LEVEL = 3;
-    private static final int LOOTING_LEVEL = 3;
-    private static final int SWEEPING_EDGE_LEVEL = 3;
-    private static final int MENDING_LEVEL = 1;
-    private static final int UNBREAKING_LEVEL = 3;
+    private static final double DEFAULT_ATTACK_DAMAGE = 6.0D;
+    private static final double DEFAULT_ATTACK_SPEED = -2.4D;
 
     public ExcaliburItem(Item.Settings settings) {
         super(settings.component(DataComponentTypes.LORE, createLore()));
@@ -52,9 +47,13 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
     }
 
     public static AttributeModifiersComponent createExcaliburAttributeModifiers() {
+        return createExcaliburAttributeModifiers(DEFAULT_ATTACK_DAMAGE, DEFAULT_ATTACK_SPEED);
+    }
+
+    private static AttributeModifiersComponent createExcaliburAttributeModifiers(double attackDamage, double attackSpeed) {
         return AttributeModifiersComponent.builder()
-                .add(EntityAttributes.ATTACK_DAMAGE, new EntityAttributeModifier(Item.BASE_ATTACK_DAMAGE_MODIFIER_ID, 6.0D, EntityAttributeModifier.Operation.ADD_VALUE), AttributeModifierSlot.MAINHAND)
-                .add(EntityAttributes.ATTACK_SPEED, new EntityAttributeModifier(Item.BASE_ATTACK_SPEED_MODIFIER_ID, -2.4D, EntityAttributeModifier.Operation.ADD_VALUE), AttributeModifierSlot.MAINHAND)
+                .add(EntityAttributes.ATTACK_DAMAGE, new EntityAttributeModifier(Item.BASE_ATTACK_DAMAGE_MODIFIER_ID, attackDamage, EntityAttributeModifier.Operation.ADD_VALUE), AttributeModifierSlot.MAINHAND)
+                .add(EntityAttributes.ATTACK_SPEED, new EntityAttributeModifier(Item.BASE_ATTACK_SPEED_MODIFIER_ID, attackSpeed, EntityAttributeModifier.Operation.ADD_VALUE), AttributeModifierSlot.MAINHAND)
                 .build();
     }
 
@@ -67,6 +66,13 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
         boolean changed = false;
 
+        AttributeModifiersComponent desiredAttributes = createExcaliburAttributeModifiers(cfg().attackDamage, cfg().attackSpeed);
+        AttributeModifiersComponent currentAttributes = stack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        if (!Objects.equals(desiredAttributes, currentAttributes)) {
+            stack.set(DataComponentTypes.ATTRIBUTE_MODIFIERS, desiredAttributes);
+            changed = true;
+        }
+
         LoreComponent desiredLore = createLore();
         LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
 
@@ -75,7 +81,7 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
             changed = true;
         }
 
-        return ensureEnchantments(stack, world) || changed;
+        return ArtifactEnchantments.refreshConfiguredStack(stack, world) || changed;
     }
 
     private static LoreComponent createLore() {
@@ -88,41 +94,7 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
         ));
     }
 
-    private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
-        var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
-        var sharpness = enchantments.getOrThrow(Enchantments.SHARPNESS);
-        var breach = enchantments.getOrThrow(Enchantments.BREACH);
-        var looting = enchantments.getOrThrow(Enchantments.LOOTING);
-        var sweepingEdge = enchantments.getOrThrow(Enchantments.SWEEPING_EDGE);
-        var mending = enchantments.getOrThrow(Enchantments.MENDING);
-        var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
-        boolean changed = false;
-
-        if (EnchantmentHelper.getLevel(sharpness, stack) < SHARPNESS_LEVEL) {
-            stack.addEnchantment(sharpness, SHARPNESS_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(breach, stack) < BREACH_LEVEL) {
-            stack.addEnchantment(breach, BREACH_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(looting, stack) < LOOTING_LEVEL) {
-            stack.addEnchantment(looting, LOOTING_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(sweepingEdge, stack) < SWEEPING_EDGE_LEVEL) {
-            stack.addEnchantment(sweepingEdge, SWEEPING_EDGE_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(mending, stack) < MENDING_LEVEL) {
-            stack.addEnchantment(mending, MENDING_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
-            stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
-            changed = true;
-        }
-
-        return changed;
+    private static ArtifactsConfig.ExcaliburSection cfg() {
+        return ArtifactsConfigManager.get().excalibur;
     }
 }

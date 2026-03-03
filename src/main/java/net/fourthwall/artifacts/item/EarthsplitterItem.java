@@ -1,8 +1,6 @@
 package net.fourthwall.artifacts.item;
 
 import net.minecraft.component.type.AttributeModifiersComponent;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -11,7 +9,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.MaceItem;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.text.Text;
@@ -22,10 +19,6 @@ import java.util.Objects;
 import java.util.List;
 
 public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
-    private static final int DENSITY_LEVEL = 5;
-    private static final int BREACH_LEVEL = 5;
-    private static final int UNBREAKING_LEVEL = 5;
-
     public EarthsplitterItem(Item.Settings settings) {
         super(settings.component(DataComponentTypes.LORE, createLore()));
     }
@@ -77,7 +70,7 @@ public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
             changed = true;
         }
 
-        return ensureEnchantments(stack, world) || changed;
+        return ArtifactEnchantments.refreshConfiguredStack(stack, world) || changed;
     }
 
     private static LoreComponent createLore() {
@@ -90,26 +83,4 @@ public class EarthsplitterItem extends MaceItem implements PolymerFallbackItem {
         ));
     }
 
-    private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
-        var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
-        var density = enchantments.getOrThrow(Enchantments.DENSITY);
-        var breach = enchantments.getOrThrow(Enchantments.BREACH);
-        var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
-        boolean changed = false;
-
-        if (EnchantmentHelper.getLevel(density, stack) < DENSITY_LEVEL) {
-            stack.addEnchantment(density, DENSITY_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(breach, stack) < BREACH_LEVEL) {
-            stack.addEnchantment(breach, BREACH_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
-            stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
-            changed = true;
-        }
-
-        return changed;
-    }
 }

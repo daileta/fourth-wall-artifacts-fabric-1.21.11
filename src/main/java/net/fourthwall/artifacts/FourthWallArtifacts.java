@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fourthwall.artifacts.earthsplitter.EarthsplitterManager;
+import net.fourthwall.artifacts.excalibur.ExcaliburManager;
 import net.fourthwall.artifacts.infested.InfestedArtifactManager;
 import net.fourthwall.artifacts.particle.WearerParticleManager;
 import net.fourthwall.artifacts.poseidon.PoseidonTridentManager;
@@ -64,6 +65,7 @@ public class FourthWallArtifacts implements ModInitializer {
         RepeaterManager.init();
         BeaconCoreManager.init();
         EarthsplitterManager.init();
+        ExcaliburManager.init();
         UndeadWardArmyManager.init();
         WearerParticleManager.init();
 

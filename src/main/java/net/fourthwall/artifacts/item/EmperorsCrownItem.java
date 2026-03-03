@@ -1,13 +1,13 @@
 package net.fourthwall.artifacts.item;
 
 import net.fourthwall.artifacts.FourthWallArtifacts;
+import net.fourthwall.artifacts.config.ArtifactsConfig;
+import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
 import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -18,36 +18,46 @@ import net.minecraft.item.Items;
 import net.minecraft.item.equipment.ArmorMaterial;
 import net.minecraft.item.equipment.ArmorMaterials;
 import net.minecraft.item.equipment.EquipmentType;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Unit;
-import net.minecraft.item.equipment.trim.ArmorTrim;
-import net.minecraft.util.Identifier;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.item.equipment.EquipmentAssetKeys;
-import java.util.Objects;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.item.equipment.trim.ArmorTrim;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Unit;
+
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Objects;
 
 public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
-    private static final int PROTECTION_LEVEL = 4;
-    private static final int AQUA_AFFINITY_LEVEL = 1;
-    private static final int RESPIRATION_LEVEL = 3;
-    private static final int MENDING_LEVEL = 1;
-    private static final int UNBREAKING_LEVEL = 3;
+    private static final int DEFAULT_ARMOR_VALUE = 5;
+    private static final float DEFAULT_TOUGHNESS = 0.0F;
+    private static final double DEFAULT_MOVEMENT_SPEED = 0.2D;
+    private static final double DEFAULT_JUMP_STRENGTH = 0.18D;
+    private static final double DEFAULT_ATTACK_DAMAGE = 3.0D;
+    private static final double DEFAULT_ENTITY_INTERACTION_RANGE = 1.5D;
+    private static final double DEFAULT_BLOCK_INTERACTION_RANGE = 2.0D;
     private static final String CUSTOM_MODEL_TAG = "Alexandria's Artifact";
 
     public EmperorsCrownItem(Settings settings) {
-        super(settings.component(DataComponentTypes.LORE, createLore()));
+        super(settings);
     }
 
     public static Item.Settings applyHelmetSettings(Item.Settings settings) {
-        ArmorMaterial material = createCrownMaterial();
+        ArmorMaterial material = createCrownMaterial(DEFAULT_ARMOR_VALUE, DEFAULT_TOUGHNESS);
         return settings
                 .maxCount(1)
                 .armor(material, EquipmentType.HELMET)
-                .attributeModifiers(createCrownAttributeModifiers(material));
+                .attributeModifiers(createCrownAttributeModifiers(
+                        material,
+                        DEFAULT_MOVEMENT_SPEED,
+                        DEFAULT_JUMP_STRENGTH,
+                        DEFAULT_ATTACK_DAMAGE,
+                        DEFAULT_ENTITY_INTERACTION_RANGE,
+                        DEFAULT_BLOCK_INTERACTION_RANGE
+                ));
     }
 
     @Override
@@ -87,7 +97,15 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
         boolean changed = false;
         changed |= ensureTrim(stack, world);
 
-        AttributeModifiersComponent desiredAttributes = createCrownAttributeModifiers(createCrownMaterial());
+        ArtifactsConfig.EmperorsCrownSection config = cfg();
+        AttributeModifiersComponent desiredAttributes = createCrownAttributeModifiers(
+                createCrownMaterial(config.armorValue, config.toughness),
+                config.movementSpeed,
+                config.jumpStrength,
+                config.attackDamage,
+                config.entityInteractionRange,
+                config.blockInteractionRange
+        );
         AttributeModifiersComponent currentAttributes = stack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         if (!desiredAttributes.equals(currentAttributes)) {
             stack.set(DataComponentTypes.ATTRIBUTE_MODIFIERS, desiredAttributes);
@@ -113,53 +131,20 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
             changed = true;
         }
 
-        return ensureEnchantments(stack, world) || changed;
+        return ArtifactEnchantments.refreshConfiguredStack(stack, world) || changed;
     }
 
-    private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
-        var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
-        var protection = enchantments.getOrThrow(Enchantments.PROTECTION);
-        var aquaAffinity = enchantments.getOrThrow(Enchantments.AQUA_AFFINITY);
-        var respiration = enchantments.getOrThrow(Enchantments.RESPIRATION);
-        var mending = enchantments.getOrThrow(Enchantments.MENDING);
-        var unbreaking = enchantments.getOrThrow(Enchantments.UNBREAKING);
-        boolean changed = false;
-
-        if (EnchantmentHelper.getLevel(protection, stack) < PROTECTION_LEVEL) {
-            stack.addEnchantment(protection, PROTECTION_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(aquaAffinity, stack) < AQUA_AFFINITY_LEVEL) {
-            stack.addEnchantment(aquaAffinity, AQUA_AFFINITY_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(respiration, stack) < RESPIRATION_LEVEL) {
-            stack.addEnchantment(respiration, RESPIRATION_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(mending, stack) < MENDING_LEVEL) {
-            stack.addEnchantment(mending, MENDING_LEVEL);
-            changed = true;
-        }
-        if (EnchantmentHelper.getLevel(unbreaking, stack) < UNBREAKING_LEVEL) {
-            stack.addEnchantment(unbreaking, UNBREAKING_LEVEL);
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    private static ArmorMaterial createCrownMaterial() {
+    private static ArmorMaterial createCrownMaterial(int helmetArmorValue, float toughness) {
         ArmorMaterial gold = ArmorMaterials.GOLD;
         EnumMap<EquipmentType, Integer> defense = new EnumMap<>(gold.defense());
-        defense.put(EquipmentType.HELMET, 5);
+        defense.put(EquipmentType.HELMET, helmetArmorValue);
 
         return new ArmorMaterial(
                 gold.durability(),
                 defense,
                 gold.enchantmentValue(),
                 gold.equipSound(),
-                gold.toughness(),
+                toughness,
                 gold.knockbackResistance(),
                 gold.repairIngredient(),
                 RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("emperors_crown"))
@@ -167,13 +152,20 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
         );
     }
 
-    private static AttributeModifiersComponent createCrownAttributeModifiers(ArmorMaterial material) {
+    private static AttributeModifiersComponent createCrownAttributeModifiers(
+            ArmorMaterial material,
+            double movementSpeed,
+            double jumpStrength,
+            double attackDamage,
+            double entityInteractionRange,
+            double blockInteractionRange
+    ) {
         return material.createAttributeModifiers(EquipmentType.HELMET)
                 .with(
                         EntityAttributes.MOVEMENT_SPEED,
                         new EntityAttributeModifier(
                                 FourthWallArtifacts.id("emperors_crown_movement_speed"),
-                                0.2D,
+                                movementSpeed,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
                         AttributeModifierSlot.HEAD
@@ -182,7 +174,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                         EntityAttributes.JUMP_STRENGTH,
                         new EntityAttributeModifier(
                                 FourthWallArtifacts.id("emperors_crown_jump_strength"),
-                                0.18D,
+                                jumpStrength,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
                         AttributeModifierSlot.HEAD
@@ -191,7 +183,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                         EntityAttributes.ATTACK_DAMAGE,
                         new EntityAttributeModifier(
                                 FourthWallArtifacts.id("emperors_crown_attack_damage"),
-                                3.0D,
+                                attackDamage,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
                         AttributeModifierSlot.HEAD
@@ -200,7 +192,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                         EntityAttributes.ENTITY_INTERACTION_RANGE,
                         new EntityAttributeModifier(
                                 FourthWallArtifacts.id("emperors_crown_entity_interaction_range"),
-                                1.5D,
+                                entityInteractionRange,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
                         AttributeModifierSlot.HEAD
@@ -209,7 +201,7 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
                         EntityAttributes.BLOCK_INTERACTION_RANGE,
                         new EntityAttributeModifier(
                                 FourthWallArtifacts.id("emperors_crown_block_interaction_range"),
-                                2.0D,
+                                blockInteractionRange,
                                 EntityAttributeModifier.Operation.ADD_VALUE
                         ),
                         AttributeModifierSlot.HEAD
@@ -245,5 +237,9 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
             return true;
         }
         return false;
+    }
+
+    private static ArtifactsConfig.EmperorsCrownSection cfg() {
+        return ArtifactsConfigManager.get().emperorsCrown;
     }
 }

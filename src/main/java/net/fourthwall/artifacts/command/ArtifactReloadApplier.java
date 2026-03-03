@@ -10,6 +10,7 @@ import net.fourthwall.artifacts.item.TridentOfPoseidonItem;
 import net.fourthwall.artifacts.item.VoidReaverItem;
 import net.fourthwall.artifacts.item.EarthsplitterItem;
 import net.fourthwall.artifacts.item.EmperorsCrownItem;
+import net.fourthwall.artifacts.item.ExcaliburItem;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
@@ -163,6 +164,9 @@ public final class ArtifactReloadApplier {
         }
         if (stack.getItem() instanceof EarthsplitterItem) {
             return EarthsplitterItem.refreshConfiguredStack(stack, world);
+        }
+        if (stack.getItem() instanceof ExcaliburItem) {
+            return ExcaliburItem.refreshConfiguredStack(stack, world);
         }
         if (stack.getItem() instanceof EmperorsCrownItem) {
             return EmperorsCrownItem.refreshConfiguredStack(stack, world);

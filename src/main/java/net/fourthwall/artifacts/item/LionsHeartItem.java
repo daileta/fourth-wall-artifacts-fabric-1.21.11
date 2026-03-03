@@ -6,6 +6,7 @@ import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -35,6 +36,7 @@ public class LionsHeartItem extends Item implements PolymerFallbackItem {
                 .maxCount(1)
                 .armor(material, EquipmentType.CHESTPLATE)
                 .attributeModifiers(createLionsHeartAttributeModifiers(material))
+                .component(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplayComponent.DEFAULT.with(DataComponentTypes.ATTRIBUTE_MODIFIERS, true))
                 .fireproof();
     }
 
@@ -143,6 +145,13 @@ public class LionsHeartItem extends Item implements PolymerFallbackItem {
         AttributeModifiersComponent existing = stack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         if (!desired.equals(existing)) {
             stack.set(DataComponentTypes.ATTRIBUTE_MODIFIERS, desired);
+            changed = true;
+        }
+
+        TooltipDisplayComponent tooltipDisplay = stack.getOrDefault(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplayComponent.DEFAULT);
+        TooltipDisplayComponent desiredTooltipDisplay = tooltipDisplay.with(DataComponentTypes.ATTRIBUTE_MODIFIERS, true);
+        if (!desiredTooltipDisplay.equals(tooltipDisplay)) {
+            stack.set(DataComponentTypes.TOOLTIP_DISPLAY, desiredTooltipDisplay);
             changed = true;
         }
 

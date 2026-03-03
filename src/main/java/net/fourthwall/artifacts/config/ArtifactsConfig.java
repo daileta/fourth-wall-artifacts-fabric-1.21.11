@@ -22,6 +22,7 @@ public final class ArtifactsConfig {
     public UndeadWardArmySection undeadWardArmy = new UndeadWardArmySection();
     public BeaconCoreSection beaconCore = new BeaconCoreSection();
     public EarthsplitterSection earthsplitter = new EarthsplitterSection();
+    public ExcaliburSection excalibur = new ExcaliburSection();
     public EmperorsCrownSection emperorsCrown = new EmperorsCrownSection();
     public VoidReaverSection voidReaver = new VoidReaverSection();
     public TridentOfPoseidonSection tridentOfPoseidon = new TridentOfPoseidonSection();
@@ -53,6 +54,9 @@ public final class ArtifactsConfig {
         if (earthsplitter == null) {
             earthsplitter = new EarthsplitterSection();
         }
+        if (excalibur == null) {
+            excalibur = new ExcaliburSection();
+        }
         if (emperorsCrown == null) {
             emperorsCrown = new EmperorsCrownSection();
         }
@@ -77,6 +81,7 @@ public final class ArtifactsConfig {
         undeadWardArmy.sanitize();
         beaconCore.sanitize();
         earthsplitter.sanitize();
+        excalibur.sanitize();
         emperorsCrown.sanitize();
         voidReaver.sanitize();
         tridentOfPoseidon.sanitize();
@@ -99,6 +104,7 @@ public final class ArtifactsConfig {
         root.add("undeadWardArmy", buildUndeadWardArmyJson(this.undeadWardArmy, defaults.undeadWardArmy));
         root.add("beaconCore", buildBeaconCoreJson(this.beaconCore, defaults.beaconCore));
         root.add("earthsplitter", buildEarthsplitterJson(this.earthsplitter, defaults.earthsplitter));
+        root.add("excalibur", buildExcaliburJson(this.excalibur, defaults.excalibur));
         root.add("emperorsCrown", buildEmperorsCrownJson(this.emperorsCrown, defaults.emperorsCrown));
         root.add("voidReaver", buildVoidReaverJson(this.voidReaver, defaults.voidReaver));
         root.add("tridentOfPoseidon", buildTridentJson(this.tridentOfPoseidon, defaults.tridentOfPoseidon));
@@ -255,12 +261,31 @@ public final class ArtifactsConfig {
     private static JsonObject buildEarthsplitterJson(EarthsplitterSection current, EarthsplitterSection defaults) {
         JsonObject obj = new JsonObject();
         addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        obj.addProperty("enchants_note", "Configure all enchantments for evanpack:earthsplitter in artifactEnchants.levels.");
+        return obj;
+    }
+
+    private static JsonObject buildExcaliburJson(ExcaliburSection current, ExcaliburSection defaults) {
+        JsonObject obj = new JsonObject();
+        addDoc(obj, "attackDamage", current.attackDamage, defaults.attackDamage);
+        addDoc(obj, "attackSpeed", current.attackSpeed, defaults.attackSpeed);
+        addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        addDoc(obj, "enableSounds", current.enableSounds, defaults.enableSounds);
+        obj.addProperty("enchants_note", "Configure all enchantments for evanpack:excalibur in artifactEnchants.levels.");
         return obj;
     }
 
     private static JsonObject buildEmperorsCrownJson(EmperorsCrownSection current, EmperorsCrownSection defaults) {
         JsonObject obj = new JsonObject();
+        addDoc(obj, "jumpStrength", current.jumpStrength, defaults.jumpStrength);
+        addDoc(obj, "armorValue", current.armorValue, defaults.armorValue);
+        addDoc(obj, "toughness", current.toughness, defaults.toughness);
+        addDoc(obj, "movementSpeed", current.movementSpeed, defaults.movementSpeed);
+        addDoc(obj, "attackDamage", current.attackDamage, defaults.attackDamage);
+        addDoc(obj, "entityInteractionRange", current.entityInteractionRange, defaults.entityInteractionRange);
+        addDoc(obj, "blockInteractionRange", current.blockInteractionRange, defaults.blockInteractionRange);
         addDoc(obj, "enableParticles", current.enableParticles, defaults.enableParticles);
+        obj.addProperty("enchants_note", "Configure all enchantments for evanpack:emperors_crown in artifactEnchants.levels.");
         return obj;
     }
 
@@ -747,10 +772,38 @@ public final class ArtifactsConfig {
         }
     }
 
+    public static final class ExcaliburSection {
+        public double attackDamage = 6.0D;
+        public double attackSpeed = -2.4D;
+        public boolean enableParticles = true;
+        public boolean enableSounds = true;
+
+        private void sanitize() {
+            attackDamage = nonNegative(attackDamage);
+            if (!Double.isFinite(attackSpeed)) {
+                attackSpeed = -2.4D;
+            }
+        }
+    }
+
     public static final class EmperorsCrownSection {
+        public double jumpStrength = 0.18D;
+        public int armorValue = 5;
+        public float toughness = 0.0F;
+        public double movementSpeed = 0.2D;
+        public double attackDamage = 3.0D;
+        public double entityInteractionRange = 1.5D;
+        public double blockInteractionRange = 2.0D;
         public boolean enableParticles = true;
 
         private void sanitize() {
+            jumpStrength = !Double.isFinite(jumpStrength) ? 0.18D : jumpStrength;
+            armorValue = nonNegative(armorValue);
+            toughness = nonNegative(toughness);
+            movementSpeed = !Double.isFinite(movementSpeed) ? 0.2D : movementSpeed;
+            attackDamage = !Double.isFinite(attackDamage) ? 3.0D : attackDamage;
+            entityInteractionRange = !Double.isFinite(entityInteractionRange) ? 1.5D : entityInteractionRange;
+            blockInteractionRange = !Double.isFinite(blockInteractionRange) ? 2.0D : blockInteractionRange;
         }
     }
 
