@@ -86,10 +86,10 @@ public class ExcaliburItem extends Item implements PolymerFallbackItem {
 
     private static LoreComponent createLore() {
     return new LoreComponent(List.of(
-        Text.translatable("It is said that a mace fell down from the heavens themselves to our earth.")
+        Text.translatable("The Holy Sword, forged by light and earth itself to act as a beacon of truth.")
             .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
 
-        Text.translatable("When it landed, it split the earth itself and helped shaped this world.")
+        Text.translatable("Its presence is the only shining light in the world of darkness.")
             .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
         ));
     }

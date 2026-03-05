@@ -1,24 +1,26 @@
 package net.fourthwall.artifacts.item;
 
 import net.fourthwall.artifacts.smoldering.SmolderingRodManager;
-import net.minecraft.component.type.TooltipDisplayComponent;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.FishingRodItem;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-import java.util.function.Consumer;
+import java.util.List;
+import java.util.Objects;
 
 public class SmolderingRodItem extends FishingRodItem implements PolymerFallbackItem {
     public SmolderingRodItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -72,15 +74,28 @@ public class SmolderingRodItem extends FishingRodItem implements PolymerFallback
             .append(Text.literal("d").styled(s -> s.withColor(0xFFF01C).withBold(true)));
     }
 
-    @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
-        super.appendTooltip(stack, context, displayComponent, textConsumer, type);
-        textConsumer.accept(Text.translatable("item.evanpack.smoldering_rod.desc.line1"));
-        textConsumer.accept(Text.translatable("item.evanpack.smoldering_rod.desc.line2"));
+    public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
     }
 
-    public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("A magmastone-tempered rod that hums with intense heat.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Only a deranged fool could have created this...")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {

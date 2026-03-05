@@ -1,6 +1,7 @@
 package net.fourthwall.artifacts.item;
 
 import net.minecraft.component.type.AttributeModifiersComponent;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
@@ -10,12 +11,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.TridentItem;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import java.util.List;
+import java.util.Objects;
 
 public class TridentOfPoseidonItem extends TridentItem implements PolymerFallbackItem {
     public TridentOfPoseidonItem(Item.Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -64,7 +69,27 @@ public class TridentOfPoseidonItem extends TridentItem implements PolymerFallbac
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("A trident passed down from the god of the sea himself.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Imbued with the power of the ocean, it grants the wielder aquatic abilities")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {

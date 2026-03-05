@@ -1,6 +1,7 @@
 package net.fourthwall.artifacts.item;
 
-import net.minecraft.component.type.TooltipDisplayComponent;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -9,11 +10,12 @@ import net.minecraft.item.AxeItem;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ToolMaterial;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import java.util.function.Consumer;
+import net.minecraft.util.Formatting;
+import java.util.List;
+import java.util.Objects;
 
 public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
     private static final int UNBREAKING_LEVEL = 3;
@@ -30,20 +32,33 @@ public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
-        super.appendTooltip(stack, context, displayComponent, textConsumer, type);
-        textConsumer.accept(Text.translatable("item.evanpack.void_reaver.desc.line1"));
-        textConsumer.accept(Text.translatable("item.evanpack.void_reaver.desc.line2"));
-    }
-
-    @Override
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
         refreshConfiguredStack(stack, world);
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("An axe corrupted by the very void itself.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Its never ending hunger is displayed in its radius.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     @Override

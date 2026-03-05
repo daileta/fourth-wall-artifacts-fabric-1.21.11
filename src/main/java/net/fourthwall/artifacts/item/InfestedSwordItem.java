@@ -1,5 +1,7 @@
 package net.fourthwall.artifacts.item;
 
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.Item;
@@ -7,10 +9,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import java.util.List;
+import java.util.Objects;
 
 public class InfestedSwordItem extends Item implements PolymerFallbackItem {
     public InfestedSwordItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
@@ -25,7 +30,27 @@ public class InfestedSwordItem extends Item implements PolymerFallbackItem {
     }
 
     public static boolean refreshConfiguredStack(ItemStack stack, ServerWorld world) {
-        return ensureEnchantments(stack, world);
+        boolean changed = false;
+
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
+        return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("A tool that clicks faintly against stone, as if the walls beckon to the sound.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Only corruption patient enough to bury its own champion could have birthed this.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     @Override

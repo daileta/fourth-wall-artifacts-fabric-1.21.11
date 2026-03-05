@@ -6,6 +6,7 @@ import net.fourthwall.artifacts.config.ArtifactsConfigManager;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
+import net.minecraft.component.type.LoreComponent;
 import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
@@ -22,12 +23,14 @@ import net.minecraft.item.equipment.EquipmentType;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-
+import net.minecraft.util.Formatting;
+import java.util.List;
+import java.util.Objects;
 import java.util.EnumMap;
 
 public class LionsHeartItem extends Item implements PolymerFallbackItem {
     public LionsHeartItem(Settings settings) {
-        super(settings);
+        super(settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     public static Item.Settings applyChestplateSettings(Item.Settings settings) {
@@ -155,7 +158,25 @@ public class LionsHeartItem extends Item implements PolymerFallbackItem {
             changed = true;
         }
 
+        LoreComponent desiredLore = createLore();
+        LoreComponent currentLore = stack.get(DataComponentTypes.LORE);
+
+        if (!Objects.equals(desiredLore, currentLore)) {
+            stack.set(DataComponentTypes.LORE, desiredLore);
+            changed = true;
+        }
+
         return ensureEnchantments(stack, world) || changed;
+    }
+
+    private static LoreComponent createLore() {
+        return new LoreComponent(List.of(
+            Text.translatable("A towering plate of dark alloy that grows heavier with every act of heroism.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
+
+            Text.translatable("Only a man desperate to be enough would have fed himself to this enchantment.")
+                .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
+        ));
     }
 
     private static boolean ensureEnchantments(ItemStack stack, ServerWorld world) {
