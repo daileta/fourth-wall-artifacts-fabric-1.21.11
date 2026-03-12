@@ -2,16 +2,7 @@
   "layers": {
     "humanoid": [
       {
-        "dyeable": {
-          "color_when_undyed": -6265536
-        },
-        "texture": "evanpack:leather"
-      },
-      {
-        "texture": "evanpack:leather_overlay"
-      },
-      {
-        "texture": "evanpack:emperors_crown"
+        "texture": "evanpack:emperors_crown_base"
       }
     ]
   }
