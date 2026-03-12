@@ -20,6 +20,7 @@ import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -46,6 +47,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Unit;
@@ -85,6 +87,12 @@ public final class UndeadWardArmyManager {
     private static final int WARDEN_AXE_SHARPNESS = 5;
     private static final int WARDEN_AXE_FIRE_ASPECT = 2;
     private static final int DEPUTY_SHIELD_BLOCK_TICKS = 3 * 20;
+    private static final Text DEPUTY_NAME = Text.literal("Undead Deputy")
+            .styled(style -> style.withColor(Formatting.BLUE).withBold(true));
+    private static final Text COMMANDER_NAME = Text.literal("Undead Commander")
+            .styled(style -> style.withColor(Formatting.AQUA).withBold(true));
+    private static final Text WARDEN_NAME = Text.literal("Undead Warden")
+            .styled(style -> style.withColor(Formatting.YELLOW).withBold(true));
 
     private static final RegistryKey<EquipmentAsset> NETHERWALKER_DEPUTY_EQUIPMENT_ASSET =
             RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_deputy"));
@@ -99,6 +107,8 @@ public final class UndeadWardArmyManager {
     private static final Map<UUID, CooldownState> COOLDOWNS = new HashMap<>();
     private static final Map<UUID, DeputyDefenseState> DEPUTY_DEFENSES = new HashMap<>();
     private static final Map<UUID, Long> COMMANDER_SHOT_READY_TICKS = new HashMap<>();
+    private static final Map<UUID, UUID> NAMEPLATES_BY_SUMMON = new HashMap<>();
+    private static final Map<UUID, UUID> SUMMONS_BY_NAMEPLATE = new HashMap<>();
     private static List<ResolvedStatusEffect> commanderArrowEffects = List.of();
 
     private UndeadWardArmyManager() {
@@ -109,7 +119,7 @@ public final class UndeadWardArmyManager {
         ServerTickEvents.END_SERVER_TICK.register(UndeadWardArmyManager::onEndServerTick);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(UndeadWardArmyManager::onAllowDamage);
         ServerLivingEntityEvents.AFTER_DAMAGE.register(UndeadWardArmyManager::onAfterDamage);
-        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> onEntityDeath(entity.getUuid()));
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> onEntityDeath(entity.getUuid(), entity.getEntityWorld().getServer()));
     }
 
     public static void reloadConfig(MinecraftServer server) {
@@ -129,6 +139,7 @@ public final class UndeadWardArmyManager {
             }
             refreshSummonConfiguredStats(summon, entry.getValue().type());
             equipSummon(summon, world, entry.getValue().type());
+            syncSummonNameplate(summon, entry.getValue().type());
         }
     }
 
@@ -195,6 +206,7 @@ public final class UndeadWardArmyManager {
             }
 
             trackSummon(summoner.getUuid(), summon.getUuid(), type, now);
+            ensureSummonNameplate(summon, type);
             startSummonAnimation(summon, summonPos, type);
             spawned++;
         }
@@ -232,7 +244,7 @@ public final class UndeadWardArmyManager {
             SummonData data = entry.getValue();
             Entity entity = findEntity(server, summonId);
             if (!(entity instanceof MobEntity summon) || !summon.isAlive()) {
-                removeSummonTracking(summonId);
+                removeSummonTracking(server, summonId);
                 continue;
             }
 
@@ -289,13 +301,14 @@ public final class UndeadWardArmyManager {
         }
     }
 
-    private static void onEntityDeath(UUID entityId) {
-        removeSummonTracking(entityId);
+    private static void onEntityDeath(UUID entityId, MinecraftServer server) {
+        removeSummonTracking(server, entityId);
     }
 
     private static void maintainSummon(MinecraftServer server, MobEntity summon, SummonData data) {
-        refreshCoreSummonState(summon);
+        refreshCoreSummonState(summon, data.type());
         refreshSummonConfiguredStats(summon, data.type());
+        syncSummonNameplate(summon, data.type());
 
         if (data.type() == SummonType.DEPUTY && maintainDeputyDefense(server, summon)) {
             return;
@@ -335,7 +348,7 @@ public final class UndeadWardArmyManager {
             zombie.setCanBreakDoors(false);
         }
 
-        refreshCoreSummonState(summon);
+        refreshCoreSummonState(summon, type);
         equipSummon(summon, world, type);
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             summon.setEquipmentDropChance(slot, 0.0F);
@@ -345,10 +358,72 @@ public final class UndeadWardArmyManager {
         summon.setHealth(summon.getMaxHealth());
     }
 
-    private static void refreshCoreSummonState(MobEntity summon) {
+    private static void refreshCoreSummonState(MobEntity summon, SummonType type) {
         summon.setSilent(true);
         summon.setFireTicks(0);
+        summon.setCustomName(summonName(type));
+        summon.setCustomNameVisible(false);
         summon.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, true, false, false));
+    }
+
+    private static void ensureSummonNameplate(MobEntity summon, SummonType type) {
+        if (!(summon.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        UUID summonId = summon.getUuid();
+        UUID nameplateId = NAMEPLATES_BY_SUMMON.get(summonId);
+        Entity existing = nameplateId == null ? null : world.getEntity(nameplateId);
+        if (existing instanceof ArmorStandEntity armorStand && armorStand.isAlive()) {
+            syncSummonNameplate(summon, type);
+            return;
+        }
+
+        if (nameplateId != null) {
+            SUMMONS_BY_NAMEPLATE.remove(nameplateId);
+        }
+
+        ArmorStandEntity nameplate = new ArmorStandEntity(world, summon.getX(), summon.getY(), summon.getZ());
+        configureNameplate(nameplate, summonName(type));
+        positionSummonNameplate(nameplate, summon);
+
+        if (world.spawnEntity(nameplate)) {
+            NAMEPLATES_BY_SUMMON.put(summonId, nameplate.getUuid());
+            SUMMONS_BY_NAMEPLATE.put(nameplate.getUuid(), summonId);
+        }
+    }
+
+    private static void syncSummonNameplate(MobEntity summon, SummonType type) {
+        if (!(summon.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        UUID nameplateId = NAMEPLATES_BY_SUMMON.get(summon.getUuid());
+        Entity entity = nameplateId == null ? null : world.getEntity(nameplateId);
+        if (!(entity instanceof ArmorStandEntity armorStand) || !armorStand.isAlive()) {
+            ensureSummonNameplate(summon, type);
+            return;
+        }
+
+        configureNameplate(armorStand, summonName(type));
+        positionSummonNameplate(armorStand, summon);
+    }
+
+    private static void configureNameplate(ArmorStandEntity nameplate, Text name) {
+        nameplate.setCustomName(name);
+        nameplate.setCustomNameVisible(true);
+        nameplate.setInvisible(true);
+        nameplate.setNoGravity(true);
+        nameplate.setInvulnerable(true);
+        nameplate.setSilent(true);
+        nameplate.setSmall(true);
+        nameplate.setMarker(true);
+    }
+
+    private static void positionSummonNameplate(ArmorStandEntity nameplate, MobEntity summon) {
+        double y = summon.getBoundingBox().maxY + 0.15D;
+        nameplate.refreshPositionAndAngles(summon.getX(), y, summon.getZ(), summon.getYaw(), 0.0F);
+        nameplate.setVelocity(Vec3d.ZERO);
     }
 
     private static void refreshSummonConfiguredStats(MobEntity summon, SummonType type) {
@@ -579,7 +654,8 @@ public final class UndeadWardArmyManager {
         summon.refreshPositionAndAngles(currentPos.x, currentPos.y, currentPos.z, summon.getYaw(), summon.getPitch());
         summon.setVelocity(Vec3d.ZERO);
         summon.getNavigation().stop();
-        refreshCoreSummonState(summon);
+        refreshCoreSummonState(summon, state.type);
+        syncSummonNameplate(summon, state.type);
 
         emitSummonAnimationParticles(world, summon, state, inPause, progress);
         emitSummonAnimationSounds(world, summon, state);
@@ -928,7 +1004,7 @@ public final class UndeadWardArmyManager {
         }
 
         summon.discard();
-        removeSummonTracking(summon.getUuid());
+        removeSummonTracking(server, summon.getUuid());
         return true;
     }
 
@@ -951,10 +1027,35 @@ public final class UndeadWardArmyManager {
         SUMMONS_BY_OWNER.computeIfAbsent(ownerId, ignored -> new HashSet<>()).add(summonId);
     }
 
-    private static void removeSummonTracking(UUID summonId) {
+    private static void discardNameplateForSummon(MinecraftServer server, UUID summonId) {
+        UUID nameplateId = NAMEPLATES_BY_SUMMON.remove(summonId);
+        if (nameplateId == null) {
+            return;
+        }
+
+        SUMMONS_BY_NAMEPLATE.remove(nameplateId);
+        if (server == null) {
+            return;
+        }
+
+        Entity nameplate = findEntity(server, nameplateId);
+        if (nameplate != null) {
+            nameplate.discard();
+        }
+    }
+
+    private static void removeSummonTracking(MinecraftServer server, UUID summonId) {
         SUMMON_ANIMATIONS.remove(summonId);
         DEPUTY_DEFENSES.remove(summonId);
         COMMANDER_SHOT_READY_TICKS.remove(summonId);
+
+        UUID summonFromNameplate = SUMMONS_BY_NAMEPLATE.remove(summonId);
+        if (summonFromNameplate != null) {
+            NAMEPLATES_BY_SUMMON.remove(summonFromNameplate);
+            return;
+        }
+
+        discardNameplateForSummon(server, summonId);
         SummonData removed = SUMMONS.remove(summonId);
         if (removed == null) {
             return;
@@ -987,7 +1088,7 @@ public final class UndeadWardArmyManager {
             if (entity != null) {
                 entity.discard();
             }
-            removeSummonTracking(summonId);
+            removeSummonTracking(server, summonId);
             removed++;
         }
         return removed;
@@ -1128,6 +1229,14 @@ public final class UndeadWardArmyManager {
             case DEPUTY -> cfg().deputies.enableHitParticles;
             case COMMANDER -> cfg().commanders.enableHitParticles;
             case WARDEN -> cfg().warden.enableHitParticles;
+        };
+    }
+
+    private static Text summonName(SummonType type) {
+        return switch (type) {
+            case DEPUTY -> DEPUTY_NAME;
+            case COMMANDER -> COMMANDER_NAME;
+            case WARDEN -> WARDEN_NAME;
         };
     }
 

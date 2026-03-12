@@ -40,6 +40,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Comparator;
@@ -62,7 +63,8 @@ public final class BloodSacrificeManager {
     private static final double SUMMON_EMERGE_DEPTH = 1.8D;
     private static final int LARGE_BLOOD_COLOR = 0x8C0012;
     private static final int SMALL_BLOOD_COLOR = 0xA60F1F;
-    private static final Text GUARDIAN_NAME = Text.literal("Blood Guardian");
+    private static final Text GUARDIAN_NAME = Text.literal("Blood Guardian")
+            .styled(style -> style.withColor(Formatting.RED).withBold(true));
     private static final RegistryKey<EquipmentAsset> GRIM_EQUIPMENT_ASSET =
             RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("grim"));
 
@@ -75,7 +77,6 @@ public final class BloodSacrificeManager {
     private static final Set<UUID> UNTETHERED_GUARDIANS = new HashSet<>();
     private static final Map<UUID, UUID> NAMEPLATES_BY_GUARDIAN = new HashMap<>();
     private static final Map<UUID, UUID> GUARDIANS_BY_NAMEPLATE = new HashMap<>();
-
     private BloodSacrificeManager() {
     }
 
@@ -170,6 +171,10 @@ public final class BloodSacrificeManager {
             ServerPlayerEntity summoner = server.getPlayerManager().getPlayer(ownerId);
             Entity entity = findEntity(server, guardianId);
             if (!(entity instanceof WitherSkeletonEntity guardian) || !guardian.isAlive()) {
+                SUMMON_ANIMATIONS.remove(guardianId);
+                UNTETHERED_GUARDIANS.remove(guardianId);
+                GUARDIAN_SPAWN_TICKS.remove(guardianId);
+                discardNameplateForGuardian(server, guardianId);
                 unlinkGuardian(ownerId, guardianId);
                 continue;
             }
@@ -303,12 +308,13 @@ public final class BloodSacrificeManager {
     private static void maintainGuardian(ServerPlayerEntity summoner, WitherSkeletonEntity guardian) {
         ensureGuardianInvisibility(guardian);
         guardian.setCustomName(GUARDIAN_NAME);
-        guardian.setCustomNameVisible(true);
-        syncGuardianNameplate(guardian);
+        guardian.setCustomNameVisible(false);
 
         if (guardian.squaredDistanceTo(summoner) > guardianTetherRadiusSquared()) {
             teleportNearSummoner(guardian, summoner);
         }
+
+        syncGuardianNameplate(guardian);
 
         ServerPlayerEntity target = findTargetForSummoner(summoner);
         if (target != null) {
@@ -332,7 +338,7 @@ public final class BloodSacrificeManager {
     private static void maintainUntetheredGuardian(WitherSkeletonEntity guardian) {
         ensureGuardianInvisibility(guardian);
         guardian.setCustomName(GUARDIAN_NAME);
-        guardian.setCustomNameVisible(true);
+        guardian.setCustomNameVisible(false);
         syncGuardianNameplate(guardian);
 
         ServerPlayerEntity target = findClosestTargetInWorld(guardian);
@@ -417,7 +423,7 @@ public final class BloodSacrificeManager {
         guardian.setPersistent();
         guardian.setCanPickUpLoot(false);
         guardian.setCustomName(GUARDIAN_NAME);
-        guardian.setCustomNameVisible(true);
+        guardian.setCustomNameVisible(false);
         guardian.setInvisible(false);
         ensureGuardianInvisibility(guardian);
         guardian.setAiDisabled(true);
@@ -632,7 +638,7 @@ public final class BloodSacrificeManager {
         guardian.getNavigation().stop();
         ensureGuardianInvisibility(guardian);
         guardian.setCustomName(GUARDIAN_NAME);
-        guardian.setCustomNameVisible(true);
+        guardian.setCustomNameVisible(false);
         syncGuardianNameplate(guardian);
 
         emitSummonAnimationParticles(world, guardian, state.elapsedTicks, state.totalTicks);
@@ -777,15 +783,8 @@ public final class BloodSacrificeManager {
         }
 
         ArmorStandEntity nameplate = new ArmorStandEntity(world, guardian.getX(), guardian.getY(), guardian.getZ());
-        nameplate.setCustomName(GUARDIAN_NAME);
-        nameplate.setCustomNameVisible(true);
-        nameplate.setInvisible(true);
-        nameplate.setNoGravity(true);
-        nameplate.setInvulnerable(true);
-        nameplate.setSilent(true);
-        nameplate.setYaw(guardian.getYaw());
-        nameplate.setPitch(0.0F);
-        positionNameplate(nameplate, guardian);
+        configureNameplate(nameplate, GUARDIAN_NAME);
+        positionGuardianNameplate(nameplate, guardian);
 
         if (world.spawnEntity(nameplate)) {
             NAMEPLATES_BY_GUARDIAN.put(guardianId, nameplate.getUuid());
@@ -805,16 +804,24 @@ public final class BloodSacrificeManager {
             return;
         }
 
-        armorStand.setCustomName(GUARDIAN_NAME);
-        armorStand.setCustomNameVisible(true);
-        armorStand.setInvisible(true);
-        armorStand.setNoGravity(true);
-        armorStand.setInvulnerable(true);
-        positionNameplate(armorStand, guardian);
+        configureNameplate(armorStand, GUARDIAN_NAME);
+        positionGuardianNameplate(armorStand, guardian);
     }
 
-    private static void positionNameplate(ArmorStandEntity nameplate, WitherSkeletonEntity guardian) {
-        nameplate.refreshPositionAndAngles(guardian.getX(), guardian.getY() + 2.55D, guardian.getZ(), guardian.getYaw(), 0.0F);
+    private static void configureNameplate(ArmorStandEntity nameplate, Text name) {
+        nameplate.setCustomName(name);
+        nameplate.setCustomNameVisible(true);
+        nameplate.setInvisible(true);
+        nameplate.setNoGravity(true);
+        nameplate.setInvulnerable(true);
+        nameplate.setSilent(true);
+        nameplate.setSmall(true);
+        nameplate.setMarker(true);
+    }
+
+    private static void positionGuardianNameplate(ArmorStandEntity nameplate, WitherSkeletonEntity guardian) {
+        double y = guardian.getBoundingBox().maxY + 0.15D;
+        nameplate.refreshPositionAndAngles(guardian.getX(), y, guardian.getZ(), guardian.getYaw(), 0.0F);
         nameplate.setVelocity(Vec3d.ZERO);
     }
 

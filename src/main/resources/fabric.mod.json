@@ -12,6 +12,7 @@
 	},
 	"license": "MIT",
 	"icon": "assets/artifacts/icon.png",
+	"accessWidener": "artifacts.accesswidener",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
