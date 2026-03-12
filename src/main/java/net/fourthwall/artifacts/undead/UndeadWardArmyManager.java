@@ -10,6 +10,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
+import net.minecraft.component.type.EquippableComponent;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -22,16 +23,21 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.AbstractPiglinEntity;
-import net.minecraft.entity.mob.PiglinBruteEntity;
-import net.minecraft.entity.mob.PiglinEntity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
+import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.equipment.EquipmentAsset;
+import net.minecraft.item.equipment.EquipmentAssetKeys;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
@@ -41,6 +47,8 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Hand;
+import net.minecraft.util.Unit;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
@@ -49,6 +57,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -65,6 +74,9 @@ public final class UndeadWardArmyManager {
     private static final int COMMANDER_PROJECTILE_PROTECTION_LEVEL = 4;
     private static final int COMMANDER_CROSSBOW_QUICK_CHARGE = 3;
     private static final int COMMANDER_CROSSBOW_PIERCING = 4;
+    private static final int COMMANDER_SHOT_COOLDOWN_TICKS = 26;
+    private static final double COMMANDER_STOP_RANGE_SQUARED = 12.0D * 12.0D;
+    private static final double COMMANDER_ARROW_DAMAGE = 6.0D;
 
     private static final int WARDEN_PROTECTION_LEVEL = 4;
     private static final int WARDEN_PROJECTILE_PROTECTION_LEVEL = 4;
@@ -72,11 +84,21 @@ public final class UndeadWardArmyManager {
     private static final int WARDEN_BLAST_PROTECTION_LEVEL = 4;
     private static final int WARDEN_AXE_SHARPNESS = 5;
     private static final int WARDEN_AXE_FIRE_ASPECT = 2;
+    private static final int DEPUTY_SHIELD_BLOCK_TICKS = 3 * 20;
+
+    private static final RegistryKey<EquipmentAsset> NETHERWALKER_DEPUTY_EQUIPMENT_ASSET =
+            RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_deputy"));
+    private static final RegistryKey<EquipmentAsset> NETHERWALKER_COMMANDER_EQUIPMENT_ASSET =
+            RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_commander"));
+    private static final RegistryKey<EquipmentAsset> NETHERWALKER_WARDEN_EQUIPMENT_ASSET =
+            RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_warden"));
 
     private static final Map<UUID, SummonData> SUMMONS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> SUMMONS_BY_OWNER = new HashMap<>();
     private static final Map<UUID, SummonAnimationState> SUMMON_ANIMATIONS = new HashMap<>();
     private static final Map<UUID, CooldownState> COOLDOWNS = new HashMap<>();
+    private static final Map<UUID, DeputyDefenseState> DEPUTY_DEFENSES = new HashMap<>();
+    private static final Map<UUID, Long> COMMANDER_SHOT_READY_TICKS = new HashMap<>();
     private static List<ResolvedStatusEffect> commanderArrowEffects = List.of();
 
     private UndeadWardArmyManager() {
@@ -102,7 +124,7 @@ public final class UndeadWardArmyManager {
 
         for (Map.Entry<UUID, SummonData> entry : List.copyOf(SUMMONS.entrySet())) {
             Entity entity = findEntity(server, entry.getKey());
-            if (!(entity instanceof AbstractPiglinEntity summon) || !(entity.getEntityWorld() instanceof ServerWorld world)) {
+            if (!(entity instanceof MobEntity summon) || !(entity.getEntityWorld() instanceof ServerWorld world)) {
                 continue;
             }
             refreshSummonConfiguredStats(summon, entry.getValue().type());
@@ -157,7 +179,7 @@ public final class UndeadWardArmyManager {
 
         int spawned = 0;
         for (int index = 0; index < summonCount; index++) {
-            AbstractPiglinEntity summon = createSummonEntity(type, world);
+            MobEntity summon = createSummonEntity(type, world);
             if (summon == null) {
                 continue;
             }
@@ -209,7 +231,7 @@ public final class UndeadWardArmyManager {
             UUID summonId = entry.getKey();
             SummonData data = entry.getValue();
             Entity entity = findEntity(server, summonId);
-            if (!(entity instanceof AbstractPiglinEntity summon) || !summon.isAlive()) {
+            if (!(entity instanceof MobEntity summon) || !summon.isAlive()) {
                 removeSummonTracking(summonId);
                 continue;
             }
@@ -244,6 +266,11 @@ public final class UndeadWardArmyManager {
             return;
         }
 
+        SummonData targetData = SUMMONS.get(target.getUuid());
+        if (targetData != null && targetData.type() == SummonType.DEPUTY && target instanceof MobEntity deputy) {
+            activateDeputyDefense(deputy, source);
+        }
+
         SummonData attackerData = resolveAttackingSummon(source);
         if (attackerData == null) {
             return;
@@ -266,14 +293,22 @@ public final class UndeadWardArmyManager {
         removeSummonTracking(entityId);
     }
 
-    private static void maintainSummon(MinecraftServer server, AbstractPiglinEntity summon, SummonData data) {
+    private static void maintainSummon(MinecraftServer server, MobEntity summon, SummonData data) {
         refreshCoreSummonState(summon);
         refreshSummonConfiguredStats(summon, data.type());
+
+        if (data.type() == SummonType.DEPUTY && maintainDeputyDefense(server, summon)) {
+            return;
+        }
 
         ServerPlayerEntity owner = server.getPlayerManager().getPlayer(data.ownerId());
         boolean ownerHasBook = owner != null && owner.isAlive() && playerHasUndeadWardArmy(owner);
         ServerPlayerEntity target = findNearestTarget(summon, data.ownerId(), ownerHasBook, aggroRadius(data.type()));
         if (target != null) {
+            if (data.type() == SummonType.COMMANDER) {
+                maintainCommanderSummon(server, summon, target);
+                return;
+            }
             if (summon.getTarget() != target) {
                 summon.setTarget(target);
             }
@@ -287,15 +322,18 @@ public final class UndeadWardArmyManager {
         summon.getNavigation().stop();
     }
 
-    private static void configureSummon(AbstractPiglinEntity summon, ServerWorld world, SummonType type) {
+    private static void configureSummon(MobEntity summon, ServerWorld world, SummonType type) {
         summon.setPersistent();
         summon.setCanPickUpLoot(false);
         summon.setSilent(true);
-        summon.setImmuneToZombification(true);
         summon.setInvisible(false);
         summon.setAiDisabled(true);
         summon.setNoGravity(true);
         summon.setInvulnerable(true);
+        if (summon instanceof ZombieEntity zombie) {
+            zombie.setBaby(false);
+            zombie.setCanBreakDoors(false);
+        }
 
         refreshCoreSummonState(summon);
         equipSummon(summon, world, type);
@@ -307,14 +345,13 @@ public final class UndeadWardArmyManager {
         summon.setHealth(summon.getMaxHealth());
     }
 
-    private static void refreshCoreSummonState(AbstractPiglinEntity summon) {
+    private static void refreshCoreSummonState(MobEntity summon) {
         summon.setSilent(true);
-        summon.setImmuneToZombification(true);
-        summon.setTimeInOverworld(0);
+        summon.setFireTicks(0);
         summon.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, true, false, false));
     }
 
-    private static void refreshSummonConfiguredStats(AbstractPiglinEntity summon, SummonType type) {
+    private static void refreshSummonConfiguredStats(MobEntity summon, SummonType type) {
         setBaseAttribute(summon, EntityAttributes.FOLLOW_RANGE, aggroRadius(type));
 
         if (type == SummonType.DEPUTY) {
@@ -325,7 +362,7 @@ public final class UndeadWardArmyManager {
         }
     }
 
-    private static void equipSummon(AbstractPiglinEntity summon, ServerWorld world, SummonType type) {
+    private static void equipSummon(MobEntity summon, ServerWorld world, SummonType type) {
         var enchantments = world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
         ArtifactsConfig.UndeadArmorProfile armor = armorProfile(type);
 
@@ -359,20 +396,30 @@ public final class UndeadWardArmyManager {
 
         switch (type) {
             case DEPUTY -> {
-                summon.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.NETHERITE_SWORD));
-                summon.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+                ItemStack sword = new ItemStack(Items.NETHERITE_SWORD);
+                sword.set(DataComponentTypes.ITEM_MODEL, FourthWallArtifacts.id("dark_master_sword_sharpness"));
+                makeUnbreakable(sword);
+                ItemStack shield = new ItemStack(Items.SHIELD);
+                shield.set(DataComponentTypes.ITEM_MODEL, FourthWallArtifacts.id("shield"));
+                makeUnbreakable(shield);
+                summon.equipStack(EquipmentSlot.MAINHAND, sword);
+                summon.equipStack(EquipmentSlot.OFFHAND, shield);
             }
             case COMMANDER -> {
                 ItemStack crossbow = new ItemStack(Items.CROSSBOW);
+                crossbow.set(DataComponentTypes.ITEM_MODEL, FourthWallArtifacts.id("soul_hunter_crossbow"));
                 crossbow.addEnchantment(enchantments.getOrThrow(Enchantments.QUICK_CHARGE), COMMANDER_CROSSBOW_QUICK_CHARGE);
                 crossbow.addEnchantment(enchantments.getOrThrow(Enchantments.PIERCING), COMMANDER_CROSSBOW_PIERCING);
+                makeUnbreakable(crossbow);
                 summon.equipStack(EquipmentSlot.MAINHAND, crossbow);
                 summon.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
             }
             case WARDEN -> {
                 ItemStack axe = new ItemStack(Items.NETHERITE_AXE);
+                axe.set(DataComponentTypes.ITEM_MODEL, FourthWallArtifacts.id("mechanical_breaker_sword"));
                 axe.addEnchantment(enchantments.getOrThrow(Enchantments.SHARPNESS), WARDEN_AXE_SHARPNESS);
                 axe.addEnchantment(enchantments.getOrThrow(Enchantments.FIRE_ASPECT), WARDEN_AXE_FIRE_ASPECT);
+                makeUnbreakable(axe);
                 summon.equipStack(EquipmentSlot.MAINHAND, axe);
                 summon.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
             }
@@ -416,13 +463,21 @@ public final class UndeadWardArmyManager {
                 )
                 .build();
         stack.set(DataComponentTypes.ATTRIBUTE_MODIFIERS, attributes);
+        applySummonEquipmentAsset(type, stack);
+        makeUnbreakable(stack);
         return stack;
     }
 
-    private static AbstractPiglinEntity createSummonEntity(SummonType type, ServerWorld world) {
+    private static void makeUnbreakable(ItemStack stack) {
+        if (!stack.contains(DataComponentTypes.UNBREAKABLE)) {
+            stack.set(DataComponentTypes.UNBREAKABLE, Unit.INSTANCE);
+        }
+    }
+
+    private static MobEntity createSummonEntity(SummonType type, ServerWorld world) {
         return switch (type) {
-            case DEPUTY, COMMANDER -> new PiglinEntity(EntityType.PIGLIN, world);
-            case WARDEN -> new PiglinBruteEntity(EntityType.PIGLIN_BRUTE, world);
+            case DEPUTY, WARDEN -> new ZombieEntity(EntityType.ZOMBIE, world);
+            case COMMANDER -> new SkeletonEntity(EntityType.SKELETON, world);
         };
     }
 
@@ -467,7 +522,7 @@ public final class UndeadWardArmyManager {
         return base.add(Math.cos(angle) * offsetScale, 0.0D, Math.sin(angle) * offsetScale);
     }
 
-    private static void startSummonAnimation(AbstractPiglinEntity summon, Vec3d finalPos, SummonType type) {
+    private static void startSummonAnimation(MobEntity summon, Vec3d finalPos, SummonType type) {
         int riseTicks = switch (type) {
             case DEPUTY -> DEPUTY_RISE_TICKS;
             case COMMANDER -> COMMANDER_RISE_TICKS;
@@ -504,7 +559,7 @@ public final class UndeadWardArmyManager {
         }
     }
 
-    private static boolean tickSummonAnimationIfActive(AbstractPiglinEntity summon) {
+    private static boolean tickSummonAnimationIfActive(MobEntity summon) {
         SummonAnimationState state = SUMMON_ANIMATIONS.get(summon.getUuid());
         if (state == null) {
             return false;
@@ -552,7 +607,7 @@ public final class UndeadWardArmyManager {
         return true;
     }
 
-    private static void emitSummonAnimationParticles(ServerWorld world, AbstractPiglinEntity summon, SummonAnimationState state, boolean inPause, double progress) {
+    private static void emitSummonAnimationParticles(ServerWorld world, MobEntity summon, SummonAnimationState state, boolean inPause, double progress) {
         if (!summonParticlesEnabled(state.type)) {
             return;
         }
@@ -607,7 +662,7 @@ public final class UndeadWardArmyManager {
         }
     }
 
-    private static void emitSummonAnimationSounds(ServerWorld world, AbstractPiglinEntity summon, SummonAnimationState state) {
+    private static void emitSummonAnimationSounds(ServerWorld world, MobEntity summon, SummonAnimationState state) {
         int oneThird = state.totalTicks / 3;
         int twoThirds = (state.totalTicks * 2) / 3;
         if (state.elapsedTicks == oneThird || state.elapsedTicks == twoThirds) {
@@ -625,7 +680,7 @@ public final class UndeadWardArmyManager {
         }
     }
 
-    private static void emitSummonFinalBurst(ServerWorld world, AbstractPiglinEntity summon, SummonType type) {
+    private static void emitSummonFinalBurst(ServerWorld world, MobEntity summon, SummonType type) {
         if (!summonParticlesEnabled(type)) {
             return;
         }
@@ -684,6 +739,165 @@ public final class UndeadWardArmyManager {
         }
     }
 
+    private static void maintainCommanderSummon(MinecraftServer server, MobEntity summon, ServerPlayerEntity target) {
+        summon.setTarget(target);
+        summon.getLookControl().lookAt(target, 30.0F, 30.0F);
+        summon.lookAtEntity(target, 30.0F, 30.0F);
+        summon.setBodyYaw(summon.getHeadYaw());
+
+        boolean canShoot = summon.squaredDistanceTo(target) <= COMMANDER_STOP_RANGE_SQUARED
+                && summon.getVisibilityCache().canSee(target);
+        if (!canShoot) {
+            summon.getNavigation().startMovingTo(target, movementNavigationSpeed(SummonType.COMMANDER));
+            return;
+        }
+
+        summon.getNavigation().stop();
+        long now = server.getTicks();
+        long readyTick = COMMANDER_SHOT_READY_TICKS.getOrDefault(summon.getUuid(), 0L);
+        if (readyTick > now) {
+            return;
+        }
+
+        shootCommanderArrow(summon, target);
+        COMMANDER_SHOT_READY_TICKS.put(summon.getUuid(), now + COMMANDER_SHOT_COOLDOWN_TICKS);
+    }
+
+    private static void shootCommanderArrow(MobEntity summon, LivingEntity target) {
+        if (!(summon.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        ItemStack projectileStack = new ItemStack(Items.ARROW);
+        ArrowEntity arrow = new ArrowEntity(world, summon, projectileStack, ItemStack.EMPTY);
+        Vec3d origin = summon.getEyePos();
+        Vec3d aimPoint = new Vec3d(target.getX(), target.getBodyY(0.3333333333333333D), target.getZ());
+        double deltaX = aimPoint.x - origin.x;
+        double deltaY = aimPoint.y - origin.y;
+        double deltaZ = aimPoint.z - origin.z;
+        double horizontalDistance = Math.sqrt((deltaX * deltaX) + (deltaZ * deltaZ));
+
+        arrow.setPosition(origin.x, origin.y - 0.1D, origin.z);
+        arrow.setOwner(summon);
+        arrow.setDamage(COMMANDER_ARROW_DAMAGE);
+        arrow.pickupType = PersistentProjectileEntity.PickupPermission.DISALLOWED;
+        arrow.setVelocity(deltaX, deltaY + (horizontalDistance * 0.2D), deltaZ, 1.8F, 3.0F);
+
+        if (world.spawnEntity(arrow)) {
+            world.playSound(
+                    null,
+                    summon.getX(),
+                    summon.getY(),
+                    summon.getZ(),
+                    SoundEvents.ITEM_CROSSBOW_SHOOT,
+                    SoundCategory.HOSTILE,
+                    1.0F,
+                    0.95F + (world.getRandom().nextFloat() * 0.1F),
+                    world.getRandom().nextLong()
+            );
+        }
+    }
+
+    private static void activateDeputyDefense(MobEntity deputy, DamageSource source) {
+        if (!(deputy.getEntityWorld() instanceof ServerWorld world)) {
+            return;
+        }
+
+        UUID focusTargetId = resolveLivingAttackerId(source);
+        if (focusTargetId == null) {
+            return;
+        }
+
+        DEPUTY_DEFENSES.put(
+                deputy.getUuid(),
+                new DeputyDefenseState(world.getServer().getTicks() + DEPUTY_SHIELD_BLOCK_TICKS, focusTargetId)
+        );
+        if (!deputy.isUsingItem()) {
+            deputy.setCurrentHand(Hand.OFF_HAND);
+        }
+    }
+
+    private static boolean maintainDeputyDefense(MinecraftServer server, MobEntity deputy) {
+        DeputyDefenseState state = DEPUTY_DEFENSES.get(deputy.getUuid());
+        if (state == null) {
+            return false;
+        }
+
+        if (state.defendUntilTick() <= server.getTicks()) {
+            stopDeputyDefense(deputy);
+            return false;
+        }
+
+        deputy.setTarget(null);
+        deputy.getNavigation().stop();
+
+        Entity focusEntity = findEntity(server, state.focusTargetId());
+        if (focusEntity instanceof LivingEntity living && living.isAlive() && living.getEntityWorld() == deputy.getEntityWorld()) {
+            deputy.getLookControl().lookAt(living, 30.0F, 30.0F);
+        }
+
+        if (!deputy.isUsingItem()) {
+            deputy.setCurrentHand(Hand.OFF_HAND);
+        }
+
+        return true;
+    }
+
+    private static void stopDeputyDefense(MobEntity deputy) {
+        DEPUTY_DEFENSES.remove(deputy.getUuid());
+        if (deputy.isUsingItem()) {
+            deputy.clearActiveItem();
+        }
+    }
+
+    private static UUID resolveLivingAttackerId(DamageSource source) {
+        Entity attacker = source.getAttacker();
+        if (attacker instanceof LivingEntity) {
+            return attacker.getUuid();
+        }
+
+        Entity sourceEntity = source.getSource();
+        if (sourceEntity instanceof ProjectileEntity projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            return owner.getUuid();
+        }
+
+        return null;
+    }
+
+    private static void applySummonEquipmentAsset(SummonType type, ItemStack stack) {
+        EquippableComponent existing = stack.get(DataComponentTypes.EQUIPPABLE);
+        if (existing == null) {
+            return;
+        }
+
+        RegistryKey<EquipmentAsset> assetKey = summonEquipmentAsset(type);
+        if (assetKey == null) {
+            return;
+        }
+
+        stack.set(DataComponentTypes.EQUIPPABLE, new EquippableComponent(
+                existing.slot(),
+                existing.equipSound(),
+                Optional.of(assetKey),
+                existing.cameraOverlay(),
+                existing.allowedEntities(),
+                existing.dispensable(),
+                existing.swappable(),
+                existing.damageOnHurt(),
+                existing.equipOnInteract(),
+                existing.canBeSheared(),
+                existing.shearingSound()
+        ));
+    }
+
+    private static RegistryKey<EquipmentAsset> summonEquipmentAsset(SummonType type) {
+        return switch (type) {
+            case DEPUTY -> NETHERWALKER_DEPUTY_EQUIPMENT_ASSET;
+            case COMMANDER -> NETHERWALKER_COMMANDER_EQUIPMENT_ASSET;
+            case WARDEN -> NETHERWALKER_WARDEN_EQUIPMENT_ASSET;
+        };
+    }
+
     private static SummonData resolveAttackingSummon(DamageSource source) {
         Entity attacker = source.getAttacker();
         if (attacker != null) {
@@ -704,7 +918,7 @@ public final class UndeadWardArmyManager {
         return null;
     }
 
-    private static boolean expireSummonIfNeeded(MinecraftServer server, AbstractPiglinEntity summon, SummonData data) {
+    private static boolean expireSummonIfNeeded(MinecraftServer server, MobEntity summon, SummonData data) {
         long lifespan = lifespanTicks(data.type());
         if (lifespan <= 0L) {
             return false;
@@ -718,7 +932,7 @@ public final class UndeadWardArmyManager {
         return true;
     }
 
-    private static ServerPlayerEntity findNearestTarget(AbstractPiglinEntity summon, UUID ownerId, boolean ownerFriendly, double radius) {
+    private static ServerPlayerEntity findNearestTarget(MobEntity summon, UUID ownerId, boolean ownerFriendly, double radius) {
         if (!(summon.getEntityWorld() instanceof ServerWorld world)) {
             return null;
         }
@@ -739,6 +953,8 @@ public final class UndeadWardArmyManager {
 
     private static void removeSummonTracking(UUID summonId) {
         SUMMON_ANIMATIONS.remove(summonId);
+        DEPUTY_DEFENSES.remove(summonId);
+        COMMANDER_SHOT_READY_TICKS.remove(summonId);
         SummonData removed = SUMMONS.remove(summonId);
         if (removed == null) {
             return;
@@ -1016,6 +1232,9 @@ public final class UndeadWardArmyManager {
                 case WARDEN -> wardenReadyTick = readyTick;
             }
         }
+    }
+
+    private record DeputyDefenseState(long defendUntilTick, UUID focusTargetId) {
     }
 
     private record ResolvedStatusEffect(RegistryEntry<net.minecraft.entity.effect.StatusEffect> effect, int durationTicks, int amplifier) {
