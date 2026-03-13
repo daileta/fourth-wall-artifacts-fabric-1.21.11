@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -318,6 +319,9 @@ public final class PoseidonTridentManager {
     }
 
     private static boolean isHoldingPoseidonTrident(PlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
         return player.getMainHandStack().isOf(ModItems.TRIDENT_OF_POSEIDON) || player.getOffHandStack().isOf(ModItems.TRIDENT_OF_POSEIDON);
     }
 

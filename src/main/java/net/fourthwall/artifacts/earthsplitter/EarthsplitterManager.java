@@ -3,6 +3,7 @@ package net.fourthwall.artifacts.earthsplitter;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -108,6 +109,9 @@ public final class EarthsplitterManager {
     }
 
     private static boolean isHoldingEarthsplitter(PlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
         return player.getMainHandStack().isOf(ModItems.EARTHSPLITTER) || player.getOffHandStack().isOf(ModItems.EARTHSPLITTER);
     }
 

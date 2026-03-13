@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.EquippableComponent;
@@ -186,6 +187,11 @@ public final class BloodSacrificeManager {
             if (summoner == null) {
                 discardGuardianById(server, guardianId);
                 unlinkGuardian(ownerId, guardianId);
+                continue;
+            }
+
+            if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(summoner) || EmptyEmbraceArtifactSuppression.areArtifactSummonsSuppressed(summoner)) {
+                removeGuardianForOwner(server, ownerId);
                 continue;
             }
 
@@ -758,6 +764,9 @@ public final class BloodSacrificeManager {
     }
 
     private static boolean playerHasBloodSacrifice(ServerPlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
         if (player.getMainHandStack().isOf(ModItems.BLOOD_SACRIFICE) || player.getOffHandStack().isOf(ModItems.BLOOD_SACRIFICE)) {
             return true;
         }

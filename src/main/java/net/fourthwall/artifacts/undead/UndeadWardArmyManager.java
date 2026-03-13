@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.block.Blocks;
 import net.minecraft.component.DataComponentTypes;
@@ -245,6 +246,13 @@ public final class UndeadWardArmyManager {
             Entity entity = findEntity(server, summonId);
             if (!(entity instanceof MobEntity summon) || !summon.isAlive()) {
                 removeSummonTracking(server, summonId);
+                continue;
+            }
+
+            ServerPlayerEntity owner = server.getPlayerManager().getPlayer(data.ownerId());
+            if (owner != null && (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(owner)
+                    || EmptyEmbraceArtifactSuppression.areArtifactSummonsSuppressed(owner))) {
+                dismissSummonsForOwner(server, data.ownerId(), null);
                 continue;
             }
 
@@ -1080,7 +1088,7 @@ public final class UndeadWardArmyManager {
         int removed = 0;
         for (UUID summonId : List.copyOf(ownerSummons)) {
             SummonData data = SUMMONS.get(summonId);
-            if (data == null || data.type() != type) {
+            if (data == null || (type != null && data.type() != type)) {
                 continue;
             }
 
@@ -1112,6 +1120,9 @@ public final class UndeadWardArmyManager {
     }
 
     private static boolean playerHasUndeadWardArmy(ServerPlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
         if (player.getMainHandStack().isOf(ModItems.UNDEAD_WARD_ARMY) || player.getOffHandStack().isOf(ModItems.UNDEAD_WARD_ARMY)) {
             return true;
         }

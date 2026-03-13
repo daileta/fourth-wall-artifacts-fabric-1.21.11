@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.fourthwall.artifacts.registry.ModStatusEffects;
 import net.minecraft.block.Block;
@@ -108,6 +109,9 @@ public final class InfestedArtifactManager {
         if (player.isCreative()) {
             return;
         }
+        if (isInfestedBehaviorSuppressed(player)) {
+            return;
+        }
         if (!isHoldingInfestedPickaxe(player)) {
             return;
         }
@@ -130,6 +134,11 @@ public final class InfestedArtifactManager {
 
         Set<UUID> protectedPlayers = new HashSet<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            if (isInfestedBehaviorSuppressed(player)) {
+                clearOwner(player.getUuid());
+                player.removeStatusEffect(ModStatusEffects.GUARANTEED_INFESTED);
+                continue;
+            }
             if (hasInfestedArtifact(player)) {
                 protectedPlayers.add(player.getUuid());
             }
@@ -208,6 +217,10 @@ public final class InfestedArtifactManager {
         for (UUID ownerId : new ArrayList<>(COMMAND_TARGETS.keySet())) {
             ServerPlayerEntity owner = server.getPlayerManager().getPlayer(ownerId);
             if (owner == null || !owner.isAlive()) {
+                clearOwner(ownerId);
+                continue;
+            }
+            if (isInfestedBehaviorSuppressed(owner)) {
                 clearOwner(ownerId);
                 continue;
             }
@@ -298,6 +311,9 @@ public final class InfestedArtifactManager {
     }
 
     private static boolean hasInfestedArtifact(PlayerEntity player) {
+        if (isInfestedBehaviorSuppressed(player)) {
+            return false;
+        }
         PlayerInventory inventory = player.getInventory();
         for (int slot = 0; slot < inventory.size(); slot++) {
             if (isInfestedArtifact(inventory.getStack(slot))) {
@@ -308,10 +324,16 @@ public final class InfestedArtifactManager {
     }
 
     private static boolean isHoldingInfestedSword(PlayerEntity player) {
+        if (isInfestedBehaviorSuppressed(player)) {
+            return false;
+        }
         return player.getMainHandStack().isOf(ModItems.INFESTED_SWORD) || player.getOffHandStack().isOf(ModItems.INFESTED_SWORD);
     }
 
     private static boolean isHoldingInfestedPickaxe(PlayerEntity player) {
+        if (isInfestedBehaviorSuppressed(player)) {
+            return false;
+        }
         return player.getMainHandStack().isOf(ModItems.INFESTED_PICKAXE) || player.getOffHandStack().isOf(ModItems.INFESTED_PICKAXE);
     }
 
@@ -331,6 +353,11 @@ public final class InfestedArtifactManager {
     private static void clearOwner(UUID ownerId) {
         COMMAND_TARGETS.remove(ownerId);
         NOT_HOLDING_SWORD_TICKS.remove(ownerId);
+    }
+
+    private static boolean isInfestedBehaviorSuppressed(PlayerEntity player) {
+        return EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)
+                || EmptyEmbraceArtifactSuppression.areInfestedSilverfishSuppressed(player);
     }
 
     private static void emitInfestedSwordHitParticles(LivingEntity target) {
