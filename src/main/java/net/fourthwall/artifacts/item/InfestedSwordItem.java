@@ -45,10 +45,10 @@ public class InfestedSwordItem extends Item implements PolymerFallbackItem {
 
     private static LoreComponent createLore() {
         return new LoreComponent(List.of(
-            Text.translatable("A tool that clicks faintly against stone, as if the walls beckon to the sound.")
+            Text.translatable("A blade that twitches in its sheath, steel crawling with something that has infected it.")
                 .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC),
 
-            Text.translatable("Only corruption patient enough to bury its own champion could have birthed this.")
+            Text.translatable("Only a nation rotten to its foundation could have forged a hero’s blade into this.")
                 .formatted(Formatting.DARK_PURPLE, Formatting.ITALIC)
         ));
     }

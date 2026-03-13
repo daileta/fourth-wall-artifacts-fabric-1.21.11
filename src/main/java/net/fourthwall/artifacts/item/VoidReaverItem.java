@@ -23,7 +23,7 @@ public class VoidReaverItem extends AxeItem implements PolymerFallbackItem {
     private static final int SHARPNESS_LEVEL = 5;
 
     public VoidReaverItem(ToolMaterial material, float attackDamage, float attackSpeed, Settings settings) {
-        super(material, attackDamage, attackSpeed, settings);
+        super(material, attackDamage, attackSpeed, settings.component(DataComponentTypes.LORE, createLore()));
     }
 
     @Override
