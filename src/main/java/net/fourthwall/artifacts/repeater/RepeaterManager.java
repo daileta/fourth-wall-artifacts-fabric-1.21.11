@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -53,6 +54,10 @@ public final class RepeaterManager {
     }
 
     public static boolean allowUse(ServerPlayerEntity player, ItemStack stack) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
+
         RepeaterState state = STATES.computeIfAbsent(player.getUuid(), ignored -> new RepeaterState());
         long now = ((ServerWorld) player.getEntityWorld()).getTime();
         if (state.activeFiring) {
@@ -161,6 +166,9 @@ public final class RepeaterManager {
     }
 
     private static ItemStack getHeldRepeaterStack(ServerPlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return ItemStack.EMPTY;
+        }
         if (player.getMainHandStack().isOf(ModItems.REPEATER)) {
             return player.getMainHandStack();
         }

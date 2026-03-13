@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "evanpack:netherwalker_layer_1_commander"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "evanpack:netherwalker_layer_2_commander"
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.fourthwall.artifacts.registry.ModBlocks;
 import net.fourthwall.artifacts.registry.ModItems;
 import net.minecraft.datafixer.DataFixTypes;
@@ -260,6 +261,9 @@ public final class BeaconCoreManager {
     }
 
     private static boolean isHoldingBeaconCore(PlayerEntity player) {
+        if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(player)) {
+            return false;
+        }
         return player.getMainHandStack().isOf(ModItems.BEACON_CORE) || player.getOffHandStack().isOf(ModItems.BEACON_CORE);
     }
 

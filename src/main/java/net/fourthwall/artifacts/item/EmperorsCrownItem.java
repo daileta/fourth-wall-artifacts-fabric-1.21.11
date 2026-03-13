@@ -3,6 +3,7 @@ package net.fourthwall.artifacts.item;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.AttributeModifierSlot;
 import net.minecraft.component.type.AttributeModifiersComponent;
@@ -10,6 +11,7 @@ import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.component.type.LoreComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.item.Item;
@@ -68,6 +70,13 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
     @Override
     public void inventoryTick(ItemStack stack, ServerWorld world, Entity entity, EquipmentSlot slot) {
         super.inventoryTick(stack, world, entity, slot);
+        if (entity instanceof PlayerEntity player
+                && slot == EquipmentSlot.HEAD
+                && EmptyEmbraceArtifactSuppression.isArtifactArmorSuppressed(player)) {
+            refreshSuppressedStack(stack, Items.GOLDEN_HELMET.getDefaultStack());
+            return;
+        }
+
         refreshConfiguredStack(stack, world);
     }
 
@@ -132,6 +141,34 @@ public class EmperorsCrownItem extends Item implements PolymerFallbackItem {
         }
 
         return ArtifactEnchantments.refreshConfiguredStack(stack, world) || changed;
+    }
+
+    private static boolean refreshSuppressedStack(ItemStack stack, ItemStack fallbackStack) {
+        boolean changed = false;
+
+        AttributeModifiersComponent fallbackAttributes = fallbackStack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        AttributeModifiersComponent currentAttributes = stack.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        if (!Objects.equals(fallbackAttributes, currentAttributes)) {
+            if (fallbackAttributes == null) {
+                stack.remove(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+            } else {
+                stack.set(DataComponentTypes.ATTRIBUTE_MODIFIERS, fallbackAttributes);
+            }
+            changed = true;
+        }
+
+        var fallbackEnchantments = fallbackStack.get(DataComponentTypes.ENCHANTMENTS);
+        var currentEnchantments = stack.get(DataComponentTypes.ENCHANTMENTS);
+        if (!Objects.equals(fallbackEnchantments, currentEnchantments)) {
+            if (fallbackEnchantments == null) {
+                stack.remove(DataComponentTypes.ENCHANTMENTS);
+            } else {
+                stack.set(DataComponentTypes.ENCHANTMENTS, fallbackEnchantments);
+            }
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static ArmorMaterial createCrownMaterial(int helmetArmorValue, float toughness) {

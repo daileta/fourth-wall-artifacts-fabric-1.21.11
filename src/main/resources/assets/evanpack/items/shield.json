@@ -1,0 +1,27 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "cases": [
+      {
+        "model": {
+          "type": "minecraft:model",
+          "model": "evanpack:item/shield_item_frame"
+        },
+        "when": "fixed"
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:condition",
+      "on_false": {
+        "type": "minecraft:model",
+        "model": "evanpack:item/shield"
+      },
+      "on_true": {
+        "type": "minecraft:model",
+        "model": "evanpack:item/shield_blocking"
+      },
+      "property": "minecraft:using_item"
+    },
+    "property": "minecraft:display_context"
+  }
+}

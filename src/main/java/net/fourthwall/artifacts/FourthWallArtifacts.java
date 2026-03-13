@@ -42,8 +42,12 @@ public class FourthWallArtifacts implements ModInitializer {
         LOGGER.info("Initializing {} (env={})", MOD_ID, FabricLoader.getInstance().getEnvironmentType());
 
         try {
-            PolymerResourcePackUtils.addModAssets(MOD_ID);
-            LOGGER.info("Polymer resource pack assets registered for mod '{}'", MOD_ID);
+            boolean assetsRegistered = PolymerResourcePackUtils.addModAssets(MOD_ID);
+            PolymerResourcePackUtils.markAsRequired();
+            LOGGER.info("Polymer resource pack setup complete for mod '{}' (assetsRegistered={}, required={})",
+                    MOD_ID,
+                    assetsRegistered,
+                    PolymerResourcePackUtils.isRequired());
         } catch (Throwable throwable) {
             LOGGER.error("Failed to initialize Polymer resource pack integration. Vanilla-client compatibility may be degraded.", throwable);
         }
@@ -114,7 +118,7 @@ public class FourthWallArtifacts implements ModInitializer {
 
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("polymer/auto-host.json");
         if (!Files.exists(configPath)) {
-            LOGGER.warn("Polymer AutoHost config not found at {}. Vanilla clients will only see fallback item textures/models unless you host and send a resource pack another way.", configPath);
+            LOGGER.warn("Polymer AutoHost config not found at {}. Configure pack delivery so vanilla clients can receive required artifact textures/models.", configPath);
             return;
         }
 

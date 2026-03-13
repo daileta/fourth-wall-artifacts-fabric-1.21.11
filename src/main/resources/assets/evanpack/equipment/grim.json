@@ -3,11 +3,17 @@
     "humanoid": [
       {
         "texture": "evanpack:grim_layer_1"
+      },
+      {
+        "texture": "evanpack:grim_layer_1_overlay"
       }
     ],
     "humanoid_leggings": [
       {
         "texture": "evanpack:grim_layer_2"
+      },
+      {
+        "texture": "evanpack:grim_layer_2_overlay"
       }
     ]
   }

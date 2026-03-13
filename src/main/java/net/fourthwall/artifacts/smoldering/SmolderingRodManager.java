@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
 import net.fourthwall.artifacts.config.ArtifactsConfigManager;
+import net.fourthwall.artifacts.integration.EmptyEmbraceArtifactSuppression;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -78,6 +79,14 @@ public final class SmolderingRodManager {
             }
 
             Entity bobberEntity = findEntity(server, bobberId);
+            if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(owner)) {
+                if (bobberEntity instanceof FishingBobberEntity bobber && bobber.isAlive()) {
+                    bobber.discard();
+                }
+                clearOwner(ownerId);
+                continue;
+            }
+
             if (!(bobberEntity instanceof FishingBobberEntity bobber) || !bobber.isAlive()) {
                 ownersToDetonate.add(ownerId);
                 continue;
