@@ -28,6 +28,10 @@
 	"mixins": [
 		"artifacts.mixins.json"
 	],
+	"custom": {
+		"polymer:resource_pack_include": true,
+		"polymer:resource_pack_require": true
+	},
 	"depends": {
 		"fabricloader": ">=0.18.4",
 		"minecraft": "~1.21.11",
