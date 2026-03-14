@@ -30,10 +30,20 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class FourthWallArtifacts implements ModInitializer {
     public static final String MOD_ID = "artifacts";
     public static final String CONTENT_NAMESPACE = "evanpack";
+    private static final String POLYMER_AUTO_HOST_MOD_ID = "polymer-autohost";
+    private static final String DEFAULT_AUTO_HOST_CONFIG = """
+            {
+              "enabled": true,
+              "required": true,
+              "mod_override": true,
+              "type": "polymer:automatic"
+            }
+            """;
 
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
@@ -51,6 +61,7 @@ public class FourthWallArtifacts implements ModInitializer {
         } catch (Throwable throwable) {
             LOGGER.error("Failed to initialize Polymer resource pack integration. Vanilla-client compatibility may be degraded.", throwable);
         }
+        ensurePolymerAutoHostConfigured();
         logPolymerAutoHostDiagnostics();
 
         ArtifactsConfigManager.load(LOGGER);
@@ -116,6 +127,11 @@ public class FourthWallArtifacts implements ModInitializer {
             return;
         }
 
+        if (!FabricLoader.getInstance().isModLoaded(POLYMER_AUTO_HOST_MOD_ID)) {
+            LOGGER.warn("Polymer AutoHost mod '{}' is not loaded. Vanilla clients cannot receive artifact textures/models without a hosted server resource pack.", POLYMER_AUTO_HOST_MOD_ID);
+            return;
+        }
+
         Path configPath = FabricLoader.getInstance().getConfigDir().resolve("polymer/auto-host.json");
         if (!Files.exists(configPath)) {
             LOGGER.warn("Polymer AutoHost config not found at {}. Configure pack delivery so vanilla clients can receive required artifact textures/models.", configPath);
@@ -132,6 +148,33 @@ public class FourthWallArtifacts implements ModInitializer {
             }
         } catch (IOException exception) {
             LOGGER.warn("Could not read Polymer AutoHost config at {}: {}", configPath, exception.getMessage());
+        }
+    }
+
+    private static void ensurePolymerAutoHostConfigured() {
+        if (FabricLoader.getInstance().getEnvironmentType() != net.fabricmc.api.EnvType.SERVER) {
+            return;
+        }
+
+        if (!FabricLoader.getInstance().isModLoaded(POLYMER_AUTO_HOST_MOD_ID)) {
+            return;
+        }
+
+        Path configPath = FabricLoader.getInstance().getConfigDir().resolve("polymer/auto-host.json");
+        if (Files.exists(configPath)) {
+            return;
+        }
+
+        try {
+            Path parent = configPath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            Files.writeString(configPath, DEFAULT_AUTO_HOST_CONFIG, StandardOpenOption.CREATE_NEW);
+            LOGGER.info("Created default Polymer AutoHost config at {} with enabled=true for vanilla-client artifact rendering.", configPath);
+        } catch (IOException exception) {
+            LOGGER.warn("Could not create default Polymer AutoHost config at {}: {}", configPath, exception.getMessage());
         }
     }
 
