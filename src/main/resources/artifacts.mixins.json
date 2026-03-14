@@ -3,7 +3,8 @@
 	"package": "net.fourthwall.artifacts.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"FishingBobberEntityMixin"
+		"FishingBobberEntityMixin",
+		"ServerHandshakeNetworkHandlerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
