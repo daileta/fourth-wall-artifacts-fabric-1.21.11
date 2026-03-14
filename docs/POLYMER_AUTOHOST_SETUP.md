@@ -61,6 +61,26 @@ If you want Polymer to host the pack on a separate HTTP port:
 
 Make sure the `external_address` is reachable by players.
 
+## MineKeep Setup
+
+MineKeep masks some forwarded connection details and only allows server resource packs from a whitelist of domains. In that environment, Polymer's default `polymer:automatic` mode can advertise an unusable backend address such as a private IP with port `0`.
+
+Use `polymer:http_server` with one of MineKeep's allowed HTTP ports and a `*.minekeep.dev` public address instead:
+
+```json
+{
+  "enabled": true,
+  "required": true,
+  "type": "polymer:http_server",
+  "settings": {
+    "port": 2053,
+    "external_address": "https://your-server-name.minekeep.dev:2053/"
+  }
+}
+```
+
+If players join through `your-server-name.minekeep.gg`, use the matching `your-server-name.minekeep.dev` host for the resource pack URL.
+
 ## This Mod's Polymer Resource Pack Integration
 
 This mod already:
