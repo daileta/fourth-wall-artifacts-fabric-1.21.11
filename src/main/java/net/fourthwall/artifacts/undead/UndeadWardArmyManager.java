@@ -471,9 +471,16 @@ public final class UndeadWardArmyManager {
 
         if (type == SummonType.DEPUTY) {
             setBaseAttribute(summon, EntityAttributes.ATTACK_DAMAGE, cfg().deputies.swordAttackDamage);
+        } else if (type == SummonType.COMMANDER) {
+            setBaseAttribute(summon, EntityAttributes.MAX_HEALTH, cfg().commanders.maxHealth);
         } else if (type == SummonType.WARDEN) {
+            setBaseAttribute(summon, EntityAttributes.MAX_HEALTH, cfg().warden.maxHealth);
             setBaseAttribute(summon, EntityAttributes.ATTACK_DAMAGE, cfg().warden.baseAttackDamage);
             setBaseAttribute(summon, EntityAttributes.MOVEMENT_SPEED, cfg().warden.movementSpeed);
+        }
+
+        if (summon.getHealth() > summon.getMaxHealth()) {
+            summon.setHealth(summon.getMaxHealth());
         }
     }
 

@@ -216,6 +216,7 @@ public final class ArtifactsConfig {
         addDoc(obj, "lifespanTicks", current.lifespanTicks, defaults.lifespanTicks);
         addDoc(obj, "summonRadius", current.summonRadius, defaults.summonRadius);
         addDoc(obj, "aggroRadius", current.aggroRadius, defaults.aggroRadius);
+        addDoc(obj, "maxHealth", current.maxHealth, defaults.maxHealth);
         addDoc(obj, "enableSummonParticles", current.enableSummonParticles, defaults.enableSummonParticles);
         addDoc(obj, "enableHitParticles", current.enableHitParticles, defaults.enableHitParticles);
         addDoc(obj, "arrowHitEffects", current.arrowHitEffects, defaults.arrowHitEffects);
@@ -232,6 +233,7 @@ public final class ArtifactsConfig {
         addDoc(obj, "aggroRadius", current.aggroRadius, defaults.aggroRadius);
         addDoc(obj, "summonForwardDistance", current.summonForwardDistance, defaults.summonForwardDistance);
         addDoc(obj, "summonSpreadRadius", current.summonSpreadRadius, defaults.summonSpreadRadius);
+        addDoc(obj, "maxHealth", current.maxHealth, defaults.maxHealth);
         addDoc(obj, "movementSpeed", current.movementSpeed, defaults.movementSpeed);
         addDoc(obj, "baseAttackDamage", current.baseAttackDamage, defaults.baseAttackDamage);
         addDoc(obj, "enableSummonParticles", current.enableSummonParticles, defaults.enableSummonParticles);
@@ -683,6 +685,7 @@ public final class ArtifactsConfig {
         public int lifespanTicks = 90 * 20;
         public double summonRadius = 3.0D;
         public double aggroRadius = 16.0D;
+        public double maxHealth = 25.0D;
         public boolean enableSummonParticles = true;
         public boolean enableHitParticles = true;
         public UndeadArmorProfile armor = new UndeadArmorProfile();
@@ -699,6 +702,7 @@ public final class ArtifactsConfig {
             lifespanTicks = nonNegative(lifespanTicks);
             summonRadius = nonNegative(summonRadius);
             aggroRadius = nonNegative(aggroRadius);
+            maxHealth = nonNegative(maxHealth);
             if (armor == null) {
                 armor = new UndeadArmorProfile();
             }
@@ -717,6 +721,7 @@ public final class ArtifactsConfig {
         public double aggroRadius = 16.0D;
         public double summonForwardDistance = 2.5D;
         public double summonSpreadRadius = 1.0D;
+        public double maxHealth = 50.0D;
         public double movementSpeed = 0.35D;
         public double baseAttackDamage = 12.0D;
         public boolean enableSummonParticles = true;
@@ -730,6 +735,7 @@ public final class ArtifactsConfig {
             aggroRadius = nonNegative(aggroRadius);
             summonForwardDistance = nonNegative(summonForwardDistance);
             summonSpreadRadius = nonNegative(summonSpreadRadius);
+            maxHealth = nonNegative(maxHealth);
             movementSpeed = nonNegative(movementSpeed);
             baseAttackDamage = nonNegative(baseAttackDamage);
             if (armor == null) {
