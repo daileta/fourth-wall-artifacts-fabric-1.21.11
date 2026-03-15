@@ -78,13 +78,14 @@ public final class BloodSacrificeManager {
     private static final Set<UUID> UNTETHERED_GUARDIANS = new HashSet<>();
     private static final Map<UUID, UUID> NAMEPLATES_BY_GUARDIAN = new HashMap<>();
     private static final Map<UUID, UUID> GUARDIANS_BY_NAMEPLATE = new HashMap<>();
+    private static final Map<UUID, StoredGuardian> STORED_GUARDIANS = new HashMap<>();
     private BloodSacrificeManager() {
     }
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(BloodSacrificeManager::onEndServerTick);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            removeGuardianForOwner(server, handler.player.getUuid());
+            storeGuardianForOwner(server, handler.player.getUuid());
             ACTIVE_BURSTS.remove(handler.player.getUuid());
             SUMMONER_LOCKS.remove(handler.player.getUuid());
         });
@@ -111,6 +112,9 @@ public final class BloodSacrificeManager {
         });
         ServerLivingEntityEvents.AFTER_DAMAGE.register(BloodSacrificeManager::onAfterDamage);
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            if (entity instanceof WitherSkeletonEntity guardian && OWNERS_BY_GUARDIAN.containsKey(guardian.getUuid())) {
+                clearGuardianPresentation(guardian);
+            }
             onAfterDamage(entity, source, 0.0F, 0.0F, false);
             onEntityDeath(entity.getUuid(), entity.getEntityWorld().getServer());
         });
@@ -137,6 +141,7 @@ public final class BloodSacrificeManager {
         ServerWorld world = (ServerWorld) summoner.getEntityWorld();
         MinecraftServer server = world.getServer();
 
+        STORED_GUARDIANS.remove(summoner.getUuid());
         removeGuardianForOwner(server, summoner.getUuid());
 
         summoner.setHealth(Math.min(bloodCfg().healthAfterUse, summoner.getMaxHealth()));
@@ -163,6 +168,7 @@ public final class BloodSacrificeManager {
     }
 
     private static void onEndServerTick(MinecraftServer server) {
+        restoreStoredGuardians(server);
         tickSummonerLocks(server);
 
         for (Map.Entry<UUID, UUID> entry : List.copyOf(GUARDIANS_BY_OWNER.entrySet())) {
@@ -423,6 +429,17 @@ public final class BloodSacrificeManager {
                 .add(0.0D, 0.1D, 0.0D);
     }
 
+    private static void finalizeGuardianSummon(WitherSkeletonEntity guardian) {
+        guardian.setAiDisabled(false);
+        guardian.setNoGravity(false);
+        guardian.setInvulnerable(false);
+        guardian.setTarget(null);
+        guardian.getNavigation().stop();
+        ensureGuardianInvisibility(guardian);
+        guardian.setCustomName(GUARDIAN_NAME);
+        guardian.setCustomNameVisible(false);
+    }
+
     private static void configureGuardian(WitherSkeletonEntity guardian, ServerPlayerEntity summoner) {
         ServerWorld world = (ServerWorld) summoner.getEntityWorld();
 
@@ -443,6 +460,11 @@ public final class BloodSacrificeManager {
 
         refreshGuardianConfiguredStats(guardian);
         guardian.setHealth(guardianCfg().maxHealth);
+    }
+
+    private static void clearGuardianPresentation(WitherSkeletonEntity guardian) {
+        guardian.setCustomName(null);
+        guardian.setCustomNameVisible(false);
     }
 
     private static void equipGuardian(WitherSkeletonEntity guardian, ServerWorld world) {
@@ -603,6 +625,7 @@ public final class BloodSacrificeManager {
     }
 
     private static void ensureGuardianInvisibility(WitherSkeletonEntity guardian) {
+        guardian.setInvisible(true);
         guardian.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, true, false, false));
     }
 
@@ -657,9 +680,7 @@ public final class BloodSacrificeManager {
 
         if (state.elapsedTicks >= state.totalTicks) {
             SUMMON_ANIMATIONS.remove(guardian.getUuid());
-            guardian.setAiDisabled(false);
-            guardian.setNoGravity(false);
-            guardian.setInvulnerable(false);
+            finalizeGuardianSummon(guardian);
             emitSummonFinalBurst(world, guardian);
             world.playSound(null, guardian.getX(), guardian.getY(), guardian.getZ(),
                     SoundEvents.ENTITY_WARDEN_NEARBY_CLOSEST, SoundCategory.HOSTILE, 1.05F, 0.95F, world.getRandom().nextLong());
@@ -895,6 +916,92 @@ public final class BloodSacrificeManager {
         OWNERS_BY_GUARDIAN.remove(guardianId);
     }
 
+    private static void storeGuardianForOwner(MinecraftServer server, UUID ownerId) {
+        UUID guardianId = findGuardianIdForOwner(ownerId);
+        if (guardianId == null) {
+            return;
+        }
+
+        Entity entity = findEntity(server, guardianId);
+        if (entity instanceof WitherSkeletonEntity guardian && guardian.isAlive()) {
+            long spawnTick = GUARDIAN_SPAWN_TICKS.getOrDefault(guardianId, (long) server.getTicks());
+            STORED_GUARDIANS.put(ownerId, new StoredGuardian(Math.min(guardian.getHealth(), guardian.getMaxHealth()), spawnTick));
+        }
+
+        SUMMON_ANIMATIONS.remove(guardianId);
+        UNTETHERED_GUARDIANS.remove(guardianId);
+        discardGuardianById(server, guardianId);
+        unlinkGuardian(ownerId, guardianId);
+    }
+
+    private static UUID findGuardianIdForOwner(UUID ownerId) {
+        UUID guardianId = GUARDIANS_BY_OWNER.get(ownerId);
+        if (guardianId != null) {
+            return guardianId;
+        }
+
+        for (Map.Entry<UUID, UUID> entry : OWNERS_BY_GUARDIAN.entrySet()) {
+            if (entry.getValue().equals(ownerId)) {
+                return entry.getKey();
+            }
+        }
+
+        return null;
+    }
+
+    private static void restoreStoredGuardians(MinecraftServer server) {
+        for (Map.Entry<UUID, StoredGuardian> entry : List.copyOf(STORED_GUARDIANS.entrySet())) {
+            UUID ownerId = entry.getKey();
+            StoredGuardian stored = entry.getValue();
+            if (findGuardianIdForOwner(ownerId) != null) {
+                STORED_GUARDIANS.remove(ownerId);
+                continue;
+            }
+
+            if (guardianCfg().lifespanTicks > 0 && (server.getTicks() - stored.spawnTick()) >= guardianCfg().lifespanTicks) {
+                STORED_GUARDIANS.remove(ownerId);
+                continue;
+            }
+
+            ServerPlayerEntity summoner = server.getPlayerManager().getPlayer(ownerId);
+            if (summoner == null || !summoner.isAlive()) {
+                continue;
+            }
+
+            if (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(summoner)
+                    || EmptyEmbraceArtifactSuppression.areArtifactSummonsSuppressed(summoner)
+                    || !playerHasBloodSacrifice(summoner)) {
+                continue;
+            }
+
+            if (restoreGuardianForOwner(summoner, stored)) {
+                STORED_GUARDIANS.remove(ownerId);
+            }
+        }
+    }
+
+    private static boolean restoreGuardianForOwner(ServerPlayerEntity summoner, StoredGuardian stored) {
+        ServerWorld world = (ServerWorld) summoner.getEntityWorld();
+        WitherSkeletonEntity guardian = new WitherSkeletonEntity(net.minecraft.entity.EntityType.WITHER_SKELETON, world);
+        Vec3d spawnPos = getSpawnPosition(summoner);
+        guardian.refreshPositionAndAngles(spawnPos.x, spawnPos.y, spawnPos.z, summoner.getYaw(), 0.0F);
+        configureGuardian(guardian, summoner);
+        finalizeGuardianSummon(guardian);
+        guardian.setHealth(Math.max(1.0F, Math.min(stored.health(), guardian.getMaxHealth())));
+
+        if (!world.spawnEntity(guardian)) {
+            FourthWallArtifacts.LOGGER.warn("Failed to restore Blood Guardian for {}", summoner.getName().getString());
+            return false;
+        }
+
+        GUARDIANS_BY_OWNER.put(summoner.getUuid(), guardian.getUuid());
+        OWNERS_BY_GUARDIAN.put(guardian.getUuid(), summoner.getUuid());
+        GUARDIAN_SPAWN_TICKS.put(guardian.getUuid(), stored.spawnTick());
+        UNTETHERED_GUARDIANS.remove(guardian.getUuid());
+        ensureGuardianNameplate(guardian);
+        return true;
+    }
+
     private static Entity findEntity(MinecraftServer server, UUID entityId) {
         for (ServerWorld world : server.getWorlds()) {
             Entity found = world.getEntity(entityId);
@@ -981,5 +1088,8 @@ public final class BloodSacrificeManager {
             this.lockedHealth = lockedHealth;
             this.remainingTicks = remainingTicks;
         }
+    }
+
+    private record StoredGuardian(float health, long spawnTick) {
     }
 }

@@ -552,7 +552,7 @@ public final class ArtifactsConfig {
 
     public static final class BloodGuardianSection {
         public float maxHealth = 50.0F;
-        public double movementSpeed = 0.50D;
+        public double movementSpeed = 0.35D;
         public double baseAttackDamage = 12.0D;
         public int lifespanTicks = 20 * 60 * 3;
         public boolean inflictsWither = false;
@@ -717,7 +717,7 @@ public final class ArtifactsConfig {
         public double aggroRadius = 16.0D;
         public double summonForwardDistance = 2.5D;
         public double summonSpreadRadius = 1.0D;
-        public double movementSpeed = 0.50D;
+        public double movementSpeed = 0.35D;
         public double baseAttackDamage = 12.0D;
         public boolean enableSummonParticles = true;
         public boolean enableHitParticles = true;

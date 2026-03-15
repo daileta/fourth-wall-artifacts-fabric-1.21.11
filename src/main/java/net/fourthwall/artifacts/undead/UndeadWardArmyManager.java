@@ -1,6 +1,7 @@
 package net.fourthwall.artifacts.undead;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fourthwall.artifacts.FourthWallArtifacts;
 import net.fourthwall.artifacts.config.ArtifactsConfig;
@@ -101,6 +102,12 @@ public final class UndeadWardArmyManager {
             RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_commander"));
     private static final RegistryKey<EquipmentAsset> NETHERWALKER_WARDEN_EQUIPMENT_ASSET =
             RegistryKey.of(EquipmentAssetKeys.REGISTRY_KEY, FourthWallArtifacts.id("netherwalker_warden"));
+    private static final String SUMMON_ENTITY_TAG = "artifacts_undead_summon";
+    private static final String SUMMON_OWNER_TAG_PREFIX = "artifacts_undead_owner:";
+    private static final String SUMMON_TYPE_TAG_PREFIX = "artifacts_undead_type:";
+    private static final String SUMMON_SPAWN_TICK_TAG_PREFIX = "artifacts_undead_spawn:";
+    private static final String SUMMON_NAMEPLATE_TAG = "artifacts_undead_nameplate";
+    private static final String SUMMON_NAMEPLATE_SUMMON_TAG_PREFIX = "artifacts_undead_nameplate_summon:";
 
     private static final Map<UUID, SummonData> SUMMONS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> SUMMONS_BY_OWNER = new HashMap<>();
@@ -118,6 +125,8 @@ public final class UndeadWardArmyManager {
     public static void init() {
         reloadConfig(null);
         ServerTickEvents.END_SERVER_TICK.register(UndeadWardArmyManager::onEndServerTick);
+        ServerEntityEvents.ENTITY_LOAD.register(UndeadWardArmyManager::onEntityLoad);
+        ServerEntityEvents.ENTITY_UNLOAD.register(UndeadWardArmyManager::onEntityUnload);
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(UndeadWardArmyManager::onAllowDamage);
         ServerLivingEntityEvents.AFTER_DAMAGE.register(UndeadWardArmyManager::onAfterDamage);
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> onEntityDeath(entity.getUuid(), entity.getEntityWorld().getServer()));
@@ -200,6 +209,7 @@ public final class UndeadWardArmyManager {
             Vec3d buriedPos = summonPos.add(0.0D, -SUMMON_EMERGE_DEPTH, 0.0D);
             summon.refreshPositionAndAngles(buriedPos.x, buriedPos.y, buriedPos.z, summoner.getYaw(), 0.0F);
             configureSummon(summon, world, type);
+            tagSummonEntity(summon, summoner.getUuid(), type, now);
 
             if (!world.spawnEntity(summon)) {
                 FourthWallArtifacts.LOGGER.warn("Failed to spawn {} for {}", type.displayNameSingular, summoner.getName().getString());
@@ -244,12 +254,19 @@ public final class UndeadWardArmyManager {
             UUID summonId = entry.getKey();
             SummonData data = entry.getValue();
             Entity entity = findEntity(server, summonId);
+            if (entity == null) {
+                continue;
+            }
             if (!(entity instanceof MobEntity summon) || !summon.isAlive()) {
                 removeSummonTracking(server, summonId);
                 continue;
             }
 
             ServerPlayerEntity owner = server.getPlayerManager().getPlayer(data.ownerId());
+            if (owner == null) {
+                parkOfflineSummon(server, summon, data);
+                continue;
+            }
             if (owner != null && (EmptyEmbraceArtifactSuppression.areArtifactPowersSuppressed(owner)
                     || EmptyEmbraceArtifactSuppression.areArtifactSummonsSuppressed(owner))) {
                 dismissSummonsForOwner(server, data.ownerId(), null);
@@ -343,6 +360,18 @@ public final class UndeadWardArmyManager {
         summon.getNavigation().stop();
     }
 
+    private static void parkOfflineSummon(MinecraftServer server, MobEntity summon, SummonData data) {
+        refreshCoreSummonState(summon, data.type());
+        refreshSummonConfiguredStats(summon, data.type());
+        summon.setTarget(null);
+        summon.getNavigation().stop();
+        if (summon.isUsingItem()) {
+            summon.clearActiveItem();
+        }
+        discardNameplateForSummon(server, summon.getUuid());
+        DEPUTY_DEFENSES.remove(summon.getUuid());
+    }
+
     private static void configureSummon(MobEntity summon, ServerWorld world, SummonType type) {
         summon.setPersistent();
         summon.setCanPickUpLoot(false);
@@ -371,6 +400,7 @@ public final class UndeadWardArmyManager {
         summon.setFireTicks(0);
         summon.setCustomName(summonName(type));
         summon.setCustomNameVisible(false);
+        summon.setInvisible(true);
         summon.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, true, false, false));
     }
 
@@ -393,6 +423,7 @@ public final class UndeadWardArmyManager {
 
         ArmorStandEntity nameplate = new ArmorStandEntity(world, summon.getX(), summon.getY(), summon.getZ());
         configureNameplate(nameplate, summonName(type));
+        tagSummonNameplate(nameplate, summonId);
         positionSummonNameplate(nameplate, summon);
 
         if (world.spawnEntity(nameplate)) {
@@ -853,7 +884,11 @@ public final class UndeadWardArmyManager {
         }
 
         ItemStack projectileStack = new ItemStack(Items.ARROW);
-        ArrowEntity arrow = new ArrowEntity(world, summon, projectileStack, ItemStack.EMPTY);
+        ItemStack weaponStack = summon.getMainHandStack().copy();
+        if (!weaponStack.isOf(Items.CROSSBOW)) {
+            weaponStack = new ItemStack(Items.CROSSBOW);
+        }
+        ArrowEntity arrow = new ArrowEntity(world, summon, projectileStack, weaponStack);
         Vec3d origin = summon.getEyePos();
         Vec3d aimPoint = new Vec3d(target.getX(), target.getBodyY(0.3333333333333333D), target.getZ());
         double deltaX = aimPoint.x - origin.x;
@@ -931,6 +966,65 @@ public final class UndeadWardArmyManager {
         DEPUTY_DEFENSES.remove(deputy.getUuid());
         if (deputy.isUsingItem()) {
             deputy.clearActiveItem();
+        }
+    }
+
+    private static void onEntityLoad(Entity entity, ServerWorld world) {
+        if (entity instanceof ArmorStandEntity armorStand) {
+            UUID summonId = summonIdFromNameplateTags(armorStand);
+            if (summonId == null) {
+                return;
+            }
+
+            UUID existingNameplateId = NAMEPLATES_BY_SUMMON.get(summonId);
+            if (existingNameplateId != null && !existingNameplateId.equals(armorStand.getUuid())) {
+                Entity existing = findEntity(world.getServer(), existingNameplateId);
+                if (existing instanceof ArmorStandEntity existingArmorStand && existingArmorStand.isAlive()) {
+                    armorStand.discard();
+                    return;
+                }
+            }
+
+            NAMEPLATES_BY_SUMMON.put(summonId, armorStand.getUuid());
+            SUMMONS_BY_NAMEPLATE.put(armorStand.getUuid(), summonId);
+            return;
+        }
+
+        if (!(entity instanceof MobEntity summon)) {
+            return;
+        }
+
+        StoredSummonData stored = storedSummonData(summon);
+        if (stored == null) {
+            return;
+        }
+
+        trackSummon(stored.ownerId(), summon.getUuid(), stored.type(), stored.spawnTick());
+        refreshCoreSummonState(summon, stored.type());
+        refreshSummonConfiguredStats(summon, stored.type());
+    }
+
+    private static void onEntityUnload(Entity entity, ServerWorld world) {
+        UUID entityId = entity.getUuid();
+        SUMMON_ANIMATIONS.remove(entityId);
+        DEPUTY_DEFENSES.remove(entityId);
+        COMMANDER_SHOT_READY_TICKS.remove(entityId);
+
+        if (entity.getCommandTags().contains(SUMMON_NAMEPLATE_TAG)) {
+            UUID summonId = SUMMONS_BY_NAMEPLATE.remove(entityId);
+            if (summonId != null && entityId.equals(NAMEPLATES_BY_SUMMON.get(summonId))) {
+                NAMEPLATES_BY_SUMMON.remove(summonId);
+            }
+            return;
+        }
+
+        if (!entity.getCommandTags().contains(SUMMON_ENTITY_TAG)) {
+            return;
+        }
+
+        UUID nameplateId = NAMEPLATES_BY_SUMMON.remove(entityId);
+        if (nameplateId != null) {
+            SUMMONS_BY_NAMEPLATE.remove(nameplateId);
         }
     }
 
@@ -1033,6 +1127,85 @@ public final class UndeadWardArmyManager {
     private static void trackSummon(UUID ownerId, UUID summonId, SummonType type, long spawnTick) {
         SUMMONS.put(summonId, new SummonData(ownerId, type, spawnTick));
         SUMMONS_BY_OWNER.computeIfAbsent(ownerId, ignored -> new HashSet<>()).add(summonId);
+    }
+
+    private static void tagSummonEntity(Entity entity, UUID ownerId, SummonType type, long spawnTick) {
+        entity.addCommandTag(SUMMON_ENTITY_TAG);
+        replacePrefixedCommandTag(entity, SUMMON_OWNER_TAG_PREFIX, ownerId.toString());
+        replacePrefixedCommandTag(entity, SUMMON_TYPE_TAG_PREFIX, type.id);
+        replacePrefixedCommandTag(entity, SUMMON_SPAWN_TICK_TAG_PREFIX, Long.toString(spawnTick));
+    }
+
+    private static void tagSummonNameplate(Entity entity, UUID summonId) {
+        entity.addCommandTag(SUMMON_NAMEPLATE_TAG);
+        replacePrefixedCommandTag(entity, SUMMON_NAMEPLATE_SUMMON_TAG_PREFIX, summonId.toString());
+    }
+
+    private static void replacePrefixedCommandTag(Entity entity, String prefix, String value) {
+        for (String tag : List.copyOf(entity.getCommandTags())) {
+            if (tag.startsWith(prefix)) {
+                entity.removeCommandTag(tag);
+            }
+        }
+        entity.addCommandTag(prefix + value);
+    }
+
+    private static StoredSummonData storedSummonData(Entity entity) {
+        if (!entity.getCommandTags().contains(SUMMON_ENTITY_TAG)) {
+            return null;
+        }
+
+        UUID ownerId = parseUuidCommandTag(entity, SUMMON_OWNER_TAG_PREFIX);
+        SummonType type = parseSummonTypeCommandTag(entity, SUMMON_TYPE_TAG_PREFIX);
+        Long spawnTick = parseLongCommandTag(entity, SUMMON_SPAWN_TICK_TAG_PREFIX);
+        if (ownerId == null || type == null || spawnTick == null) {
+            return null;
+        }
+
+        return new StoredSummonData(ownerId, type, spawnTick);
+    }
+
+    private static UUID summonIdFromNameplateTags(Entity entity) {
+        if (!entity.getCommandTags().contains(SUMMON_NAMEPLATE_TAG)) {
+            return null;
+        }
+
+        return parseUuidCommandTag(entity, SUMMON_NAMEPLATE_SUMMON_TAG_PREFIX);
+    }
+
+    private static UUID parseUuidCommandTag(Entity entity, String prefix) {
+        for (String tag : entity.getCommandTags()) {
+            if (tag.startsWith(prefix)) {
+                try {
+                    return UUID.fromString(tag.substring(prefix.length()));
+                } catch (IllegalArgumentException ignored) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Long parseLongCommandTag(Entity entity, String prefix) {
+        for (String tag : entity.getCommandTags()) {
+            if (tag.startsWith(prefix)) {
+                try {
+                    return Long.parseLong(tag.substring(prefix.length()));
+                } catch (NumberFormatException ignored) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static SummonType parseSummonTypeCommandTag(Entity entity, String prefix) {
+        for (String tag : entity.getCommandTags()) {
+            if (tag.startsWith(prefix)) {
+                return SummonType.fromId(tag.substring(prefix.length()));
+            }
+        }
+        return null;
     }
 
     private static void discardNameplateForSummon(MinecraftServer server, UUID summonId) {
@@ -1309,9 +1482,21 @@ public final class UndeadWardArmyManager {
             this.displayNameSingular = displayNameSingular;
             this.displayNamePlural = displayNamePlural;
         }
+
+        private static SummonType fromId(String id) {
+            for (SummonType type : values()) {
+                if (type.id.equals(id)) {
+                    return type;
+                }
+            }
+            return null;
+        }
     }
 
     private record SummonData(UUID ownerId, SummonType type, long spawnTick) {
+    }
+
+    private record StoredSummonData(UUID ownerId, SummonType type, long spawnTick) {
     }
 
     private static final class SummonAnimationState {
