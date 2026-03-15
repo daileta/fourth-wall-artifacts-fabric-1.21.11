@@ -249,6 +249,7 @@ public final class UndeadWardArmyManager {
 
     private static void onEndServerTick(MinecraftServer server) {
         tickCooldowns(server);
+        cleanupOrphanedSummonNameplates(server);
 
         for (Map.Entry<UUID, SummonData> entry : List.copyOf(SUMMONS.entrySet())) {
             UUID summonId = entry.getKey();
@@ -1009,23 +1010,6 @@ public final class UndeadWardArmyManager {
         SUMMON_ANIMATIONS.remove(entityId);
         DEPUTY_DEFENSES.remove(entityId);
         COMMANDER_SHOT_READY_TICKS.remove(entityId);
-
-        if (entity.getCommandTags().contains(SUMMON_NAMEPLATE_TAG)) {
-            UUID summonId = SUMMONS_BY_NAMEPLATE.remove(entityId);
-            if (summonId != null && entityId.equals(NAMEPLATES_BY_SUMMON.get(summonId))) {
-                NAMEPLATES_BY_SUMMON.remove(summonId);
-            }
-            return;
-        }
-
-        if (!entity.getCommandTags().contains(SUMMON_ENTITY_TAG)) {
-            return;
-        }
-
-        UUID nameplateId = NAMEPLATES_BY_SUMMON.remove(entityId);
-        if (nameplateId != null) {
-            SUMMONS_BY_NAMEPLATE.remove(nameplateId);
-        }
     }
 
     private static UUID resolveLivingAttackerId(DamageSource source) {
@@ -1105,9 +1089,31 @@ public final class UndeadWardArmyManager {
             return false;
         }
 
+        discardNameplateForSummon(server, summon.getUuid());
         summon.discard();
         removeSummonTracking(server, summon.getUuid());
         return true;
+    }
+
+    private static void cleanupOrphanedSummonNameplates(MinecraftServer server) {
+        for (Map.Entry<UUID, UUID> entry : List.copyOf(NAMEPLATES_BY_SUMMON.entrySet())) {
+            UUID summonId = entry.getKey();
+            UUID nameplateId = entry.getValue();
+            Entity summon = findEntity(server, summonId);
+            Entity nameplate = findEntity(server, nameplateId);
+
+            if (!(nameplate instanceof ArmorStandEntity armorStand) || !armorStand.isAlive()) {
+                NAMEPLATES_BY_SUMMON.remove(summonId);
+                SUMMONS_BY_NAMEPLATE.remove(nameplateId);
+                continue;
+            }
+
+            if (!(summon instanceof MobEntity mob) || !mob.isAlive()) {
+                armorStand.discard();
+                NAMEPLATES_BY_SUMMON.remove(summonId);
+                SUMMONS_BY_NAMEPLATE.remove(nameplateId);
+            }
+        }
     }
 
     private static ServerPlayerEntity findNearestTarget(MobEntity summon, UUID ownerId, boolean ownerFriendly, double radius) {
@@ -1267,6 +1273,7 @@ public final class UndeadWardArmyManager {
 
             Entity entity = findEntity(server, summonId);
             if (entity != null) {
+                discardNameplateForSummon(server, summonId);
                 entity.discard();
             }
             removeSummonTracking(server, summonId);

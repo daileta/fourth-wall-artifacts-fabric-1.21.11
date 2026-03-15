@@ -170,6 +170,7 @@ public final class BloodSacrificeManager {
     private static void onEndServerTick(MinecraftServer server) {
         restoreStoredGuardians(server);
         tickSummonerLocks(server);
+        cleanupOrphanedGuardianNameplates(server);
 
         for (Map.Entry<UUID, UUID> entry : List.copyOf(GUARDIANS_BY_OWNER.entrySet())) {
             UUID ownerId = entry.getKey();
@@ -893,6 +894,11 @@ public final class BloodSacrificeManager {
         discardNameplateForGuardian(server, guardianId);
         GUARDIAN_SPAWN_TICKS.remove(guardianId);
         Entity entity = findEntity(server, guardianId);
+        if (entity instanceof WitherSkeletonEntity guardian) {
+            clearGuardianPresentation(guardian);
+            guardian.discard();
+            return;
+        }
         if (entity != null) {
             entity.discard();
         }
@@ -1024,6 +1030,7 @@ public final class BloodSacrificeManager {
         }
 
         UUID guardianId = guardian.getUuid();
+        clearGuardianPresentation(guardian);
         discardGuardianById(server, guardianId);
         SUMMON_ANIMATIONS.remove(guardianId);
         UNTETHERED_GUARDIANS.remove(guardianId);
@@ -1033,6 +1040,27 @@ public final class BloodSacrificeManager {
             OWNERS_BY_GUARDIAN.remove(guardianId);
         }
         return true;
+    }
+
+    private static void cleanupOrphanedGuardianNameplates(MinecraftServer server) {
+        for (Map.Entry<UUID, UUID> entry : List.copyOf(NAMEPLATES_BY_GUARDIAN.entrySet())) {
+            UUID guardianId = entry.getKey();
+            UUID nameplateId = entry.getValue();
+            Entity guardian = findEntity(server, guardianId);
+            Entity nameplate = findEntity(server, nameplateId);
+
+            if (!(nameplate instanceof ArmorStandEntity armorStand) || !armorStand.isAlive()) {
+                NAMEPLATES_BY_GUARDIAN.remove(guardianId);
+                GUARDIANS_BY_NAMEPLATE.remove(nameplateId);
+                continue;
+            }
+
+            if (!(guardian instanceof WitherSkeletonEntity witherSkeleton) || !witherSkeleton.isAlive()) {
+                armorStand.discard();
+                NAMEPLATES_BY_GUARDIAN.remove(guardianId);
+                GUARDIANS_BY_NAMEPLATE.remove(nameplateId);
+            }
+        }
     }
 
     private static ArtifactsConfig.BloodSacrificeSection bloodCfg() {
